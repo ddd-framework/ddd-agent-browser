@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-rc.4
+
+- Renderer image with the logo export as the page shows it: `logo.png` is a transparent RGBA cut of the logo,
+  `logo.svg` is self-contained (its background shape, inlined colours), the new `logo-on-dark.svg`; design tokens gain
+  `logo.onDarkFile` and `logo.logoBackground`; the border colour skips colours invisible on the background.
+- PHP side: unchanged behaviour — asset names and the tokens pass through as the renderer sends them; the file sink
+  documentation names `logo-on-dark.svg`.
+
 ## 0.1.0-rc.3
 
 - First renderer image: the release workflow builds `renderer/` for `linux/amd64` with the build secret `github_token`

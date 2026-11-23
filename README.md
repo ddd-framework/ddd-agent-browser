@@ -32,7 +32,7 @@ application never renders or executes foreign content itself.
    intake: type from the bytes, executable content refused, malware scan; the file lands in the workspace as
    untrusted with its origin. Without it `browserExportAssets` refuses and design tokens are not saved as a file.
    Target convention: everything taken from one site goes to the folder `web/<domain>` (`BrowserFileToStore::$targetFolder`)
-   under the renderer's file names (`design-tokens.json`, `logo.svg`, `logo.png`, `logo-original.<ext>`,
+   under the renderer's file names (`design-tokens.json`, `logo.svg`, `logo-on-dark.svg`, `logo.png`, `logo-original.<ext>`,
    `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg`, `font-<name>`), side by side: the token
    file names the logo files.
 7. With ddd-agents: bind the skills in the host's `config/app/AI/skillPackages.php`:
@@ -121,7 +121,7 @@ contract only grows: the renderer is deployed first, then the PHP release that r
       svgFile, onDarkFile, …}`, `customProperties {total, top[]}`, `source {url, title, fetchedAt, viewport}`.
     - `inspect` → `{element, styles, box, rules[], summary}` (main frame only).
     - `assets` (`kinds`: stylesheets, logo, screenshots, fonts) → `{files[{kind, name, mimeType, sourceUrl, size,
-      content (base64)}], skipped[], note}`. Names: `logo.svg` (sanitized), `logo.png`, `logo-original.<ext>`,
+      content (base64)}], skipped[], note}`. Names: `logo.svg` (sanitized), `logo-on-dark.svg`, `logo.png`, `logo-original.<ext>`,
       `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg`, `font-<name>`. The host's file
       sink stores them under these names next to `design-tokens.json`; the type is read from the bytes (the
       `mimeType` is a hint), an SVG is only ever a stored file.

@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
  *
  * Target convention: a file names its folder in `targetFolder` — `web/<domain>` (e.g. `web/example.com`) for
  * everything taken from one site — and its `fileName` exactly as the renderer named it (`design-tokens.json`,
- * `logo.svg`, `logo.png`, `logo-original.<ext>`, `stylesheet-NN-<name>.css`, `screenshot-viewport.png`,
+ * `logo.svg`, `logo-on-dark.svg`, `logo.png`, `logo-original.<ext>`, `stylesheet-NN-<name>.css`, `screenshot-viewport.png`,
  * `screenshot-page.jpg`, `font-<name>`). Store them side by side under these names: design-tokens.json refers to the
  * logo files by name.
  */
