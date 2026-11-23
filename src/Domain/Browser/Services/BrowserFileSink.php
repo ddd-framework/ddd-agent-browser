@@ -15,6 +15,12 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
  * JavaScript, SVG scripts), malware scan; the file lands in the workspace as untrusted with its origin. Without an
  * implementation the tools that write files are not offered. One implementation per host (autoconfigured, tag
  * `browser.file_sink`; the first one wins).
+ *
+ * Target convention: a file names its folder in `targetFolder` — `web/<domain>` (e.g. `web/example.com`) for
+ * everything taken from one site — and its `fileName` exactly as the renderer named it (`design-tokens.json`,
+ * `logo.svg`, `logo.png`, `logo-original.<ext>`, `stylesheet-NN-<name>.css`, `screenshot-viewport.png`,
+ * `screenshot-page.jpg`, `font-<name>`). Store them side by side under these names: design-tokens.json refers to the
+ * logo files by name.
  */
 #[AutoconfigureTag(self::TAG)]
 interface BrowserFileSink

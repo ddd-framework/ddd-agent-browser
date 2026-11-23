@@ -100,6 +100,20 @@ class BrowserFileSinksService extends Service
     }
 
     /**
+     * The folder of files taken from a site: `web/<domain>` (host without `www.`, lower case); `web/unknown-site` when
+     * the page has no host.
+     * @param string|null $pageUrl
+     * @return string
+     */
+    public function buildWebFolder(?string $pageUrl): string
+    {
+        $host = strtolower((string)parse_url((string)$pageUrl, PHP_URL_HOST));
+        $host = str_starts_with($host, 'www.') ? substr($host, 4) : $host;
+        $host = trim((string)preg_replace('/[^a-z0-9.-]+/', '-', $host), '.-');
+        return 'web/' . ($host !== '' ? $host : 'unknown-site');
+    }
+
+    /**
      * A file name safe for any store: the last path segment of the given name, letters, digits, dot, dash and underscore.
      * @param string|null $fileName
      * @param string $fallbackFileName

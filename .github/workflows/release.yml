@@ -40,6 +40,8 @@ jobs:
             exit 1
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+      # the same rule as BrowserRendererContract::isCompatibleContractVersion(): the constant is the release's core
+      # version (the tag may carry a pre-release suffix such as -rc.3)
       - name: Contract constant matches the version
         run: |
           CONTRACT=$(grep -oE "CONTRACT_VERSION = '[^']+'" src/Domain/Browser/Entities/Renderer/BrowserRendererContract.php | head -1 | sed -E "s/.*'([^']+)'/\1/")
@@ -90,7 +92,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: renderer
+          platforms: linux/amd64
           push: true
+          # the Camoufox fetch in the Dockerfile asks the GitHub API (secret id github_token, optional): without it the
+          # build runs into the anonymous rate limit
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
           tags: ${{ env.IMAGE }}:${{ needs.verify.outputs.version }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}

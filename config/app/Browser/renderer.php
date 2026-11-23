@@ -20,10 +20,8 @@ return [
     'sessionEndpointEnv' => 'BROWSER_RENDERER_SESSION_ENDPOINT',
     // name of the env variable with the caller token sent as X-Render-Token (it names the caller class); null or empty = no header
     'tokenEnv' => 'BROWSER_RENDERER_TOKEN',
-    // seconds one session action may take on the wire (the renderer's own limit per action is 30 s)
-    'sessionActionTimeoutSeconds' => 40,
-    // seconds one guarded file fetch through the renderer may take (downloads and asset exports)
-    'fetchTimeoutSeconds' => 60,
+    // seconds PHP waits for one session action; above the renderer's own deadlines (navigate 45 s, analyse 60 s)
+    'sessionActionTimeoutSeconds' => 65,
     // seconds the health probe of app:browser:check-renderer may take
     'healthTimeoutSeconds' => 10,
 ];

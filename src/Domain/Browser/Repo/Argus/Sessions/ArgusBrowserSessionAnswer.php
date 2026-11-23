@@ -18,7 +18,7 @@ use DDD\Domain\Browser\Entities\Sessions\BrowserSessionRequest;
  * `httpStatusCode` null with `error` set. The endpoint and the caller token come from {@see call()}; as an
  * external call it carries none of the application's own headers or tokens.
  */
-#[ArgusLoad(loadEndpoint: 'POST:/browser/session/navigate', cacheLevel: ArgusCache::CACHELEVEL_NONE, timeout: 40)]
+#[ArgusLoad(loadEndpoint: 'POST:/browser/session/navigate', cacheLevel: ArgusCache::CACHELEVEL_NONE, timeout: 65)]
 class ArgusBrowserSessionAnswer extends BrowserSessionAnswer
 {
     use ArgusTrait;

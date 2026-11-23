@@ -13,6 +13,14 @@ use DDD\Domain\Base\Entities\ValueObject;
  */
 class BrowserSubmission extends ValueObject
 {
+    /** A request the operator can release once (it carries a release token) */
+    public const string KIND_SUBMISSION = 'submission';
+
+    /** A script request that carried typed text to another site: dropped for good, no release exists */
+    public const string KIND_DROPPED = 'dropped';
+
+    public ?string $kind = self::KIND_SUBMISSION;
+
     public ?string $method = null;
 
     /** @var string|null Origin and path of the target */
@@ -50,6 +58,11 @@ class BrowserSubmission extends ValueObject
             $fieldLines[] = '`' . $browserSubmissionField->name . '` = "' . $browserSubmissionField->value . '"' . ($browserSubmissionField->typed ? ' (typed in this session)' : '');
         }
         return strtoupper((string)$this->method) . ' to ' . $this->target . ($fieldLines === [] ? ' (no fields)' : ' with ' . implode(', ', $fieldLines));
+    }
+
+    public function isReleasable(): bool
+    {
+        return $this->kind !== self::KIND_DROPPED && $this->releaseToken !== null;
     }
 
     public function uniqueKey(): string

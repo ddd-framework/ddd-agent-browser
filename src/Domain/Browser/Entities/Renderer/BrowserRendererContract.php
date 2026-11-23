@@ -56,6 +56,34 @@ class BrowserRendererContract
     public const string REASON_BLOCKED = 'BLOCKED';
     public const string REASON_BOT_CHALLENGE = 'BOT_CHALLENGE';
     public const string REASON_TIMEOUT = 'TIMEOUT';
+    public const string REASON_UNRESOLVABLE = 'UNRESOLVABLE';
+    public const string REASON_TOO_MANY_REDIRECTS = 'TOO_MANY_REDIRECTS';
+    public const string REASON_FETCH_FAILED = 'FETCH_FAILED';
+    public const string REASON_NOT_A_FIELD = 'NOT_A_FIELD';
+    public const string REASON_INVALID_OPTION = 'INVALID_OPTION';
+    public const string REASON_RELEASE_INVALID = 'RELEASE_INVALID';
+    public const string REASON_ACTION_FAILED = 'ACTION_FAILED';
+    public const string REASON_ACTION_TIMEOUT = 'ACTION_TIMEOUT';
+    public const string REASON_TAB_LIMIT = 'TAB_LIMIT';
+    public const string REASON_NO_SUCH_TAB = 'NO_SUCH_TAB';
+    public const string REASON_LIMIT_REACHED = 'LIMIT_REACHED';
+    public const string REASON_OUT_OF_RANGE = 'OUT_OF_RANGE';
+    public const string REASON_NO_PAGE = 'NO_PAGE';
+    public const string REASON_UNSUPPORTED_FRAME = 'UNSUPPORTED_FRAME';
+    public const string REASON_BUSY = 'BUSY';
+
+    /** @var string A ref of a snapshot: `e12`, or with a frame prefix `f3e12` */
+    public const string REF_PATTERN = '/^(f\d+)?e\d+$/';
+
+    /**
+     * Whether a model-written ref has the renderer's shape.
+     * @param string|null $ref
+     * @return bool
+     */
+    public static function isValidRef(?string $ref): bool
+    {
+        return $ref !== null && preg_match(static::REF_PATTERN, $ref) === 1;
+    }
 
     /**
      * Whether a renderer that reports `$rendererContractVersion` serves this package (same major, at least the minimum).

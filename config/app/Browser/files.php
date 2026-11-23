@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Browser module: files that leave the browser (downloads, exported assets, design token files). They go only through
+ * Browser module: files that leave the browser (exported assets, design token files). They go only through
  * the host's file sink (a service implementing DDD\Domain\Browser\Services\Files\BrowserFileSink); without one the
  * tools that write files are not offered.
  *

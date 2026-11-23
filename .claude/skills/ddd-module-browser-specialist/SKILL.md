@@ -52,6 +52,11 @@ metadata:
 | `BLOCKED`, `BOT_CHALLENGE` | no retry, one attempt per site |
 | HTTP 429 | `BUSY`: wait `Retry-After` |
 | HTTP 404 | the renderer has no session role: operator |
+| `CONSENT_REQUIRED` with only `kind: dropped` | gone for good, no release: say so, ask nobody |
+| any other reason | `BrowserAgentAnswersService::buildRefusalText()` has one sentence per reason |
+
+Refs: `e12` or `f3e12` (`BrowserRendererContract::REF_PATTERN`). Files of a site go to `web/<domain>` under the
+renderer's names (design-tokens.json next to logo.svg / logo.png). PHP waits 65 s per action; tool ceilings 80 / 140 s.
 
 ## Host checklist
 

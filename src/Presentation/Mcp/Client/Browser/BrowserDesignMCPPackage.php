@@ -52,7 +52,8 @@ class BrowserDesignMCPPackage extends MCPPackage
      * The design tokens of the session's current page (open it with browserNavigate first): palette by role with
      * contrast ratios, `:root` custom properties, typography of H1–H3, body and buttons (the rendered font, and the
      * closest free font as a fallback), radius/shadow/spacing scales, button, card and navigation styles, the logo.
-     * Answers a summary; the full tokens are saved as design-tokens.json in the workspace when a file sink is set up.
+     * Answers a summary; the full tokens are saved as web/<domain>/design-tokens.json in the workspace when a file sink
+     * is set up (export the logo with browserExportAssets into the same folder: the token file names it).
      * A web font is licensed for its website: name it, use the proposed free font and say so.
      *
      * @example {}
@@ -62,7 +63,7 @@ class BrowserDesignMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('styles and texts of a third-party web page')]
     #[MCPToolRefreshesState('the analysis reads the page as it is now')]
-    #[MCPToolExecutionTimeout(60, 'one design analysis in the renderer (≤ 30 s) and the file')]
+    #[MCPToolExecutionTimeout(80, 'one design analysis in the renderer (≤ 30 s) and the file; PHP waits up to 65 s for the renderer')]
     #[MCPToolSummary('Design tokens of the session\'s page (palette by role, custom properties, typography with free fallback font, scales, components, logo); summary + design-tokens.json in the workspace.')]
     public function browserExtractDesign(
         BrowserExtractDesignRequestDto $requestDto,
@@ -77,8 +78,8 @@ class BrowserDesignMCPPackage extends MCPPackage
         if (!in_array($scope, ['page', 'ref'], true)) {
             throw new BadRequestException('`scope` is `page` or `ref`.');
         }
-        if ($scope === 'ref' && ($requestDto->ref === null || $requestDto->ref === '')) {
-            throw new BadRequestException('`scope: ref` needs the element\'s `ref`.');
+        if ($scope === 'ref') {
+            BrowserSessionMCPPackage::throwUnlessValidRef($requestDto->ref, __FUNCTION__, true);
         }
         $browserSession = $browserAgentSessionsService->findSessionOfCall($callProvenance, false);
         $browserSessionRequest = BrowserSessionRequest::forAction(BrowserRendererContract::SESSION_ACTION_ANALYSE, $browserSession->sessionKey);
@@ -94,6 +95,7 @@ class BrowserDesignMCPPackage extends MCPPackage
         if ($browserSessionAnswer->designTokensJson !== null) {
             $browserFileToStore = new BrowserFileToStore();
             $browserFileToStore->fileName = static::DESIGN_TOKENS_FILE_NAME;
+            $browserFileToStore->targetFolder = $browserFileSinksService->buildWebFolder($browserSession->currentUrl);
             $browserFileToStore->contentType = 'application/json';
             $browserFileToStore->kind = 'design-tokens';
             $browserFileToStore->pageUrl = $browserSession->currentUrl;
@@ -121,7 +123,7 @@ class BrowserDesignMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('styles and texts of a third-party web page')]
     #[MCPToolRefreshesState('the inspection reads the page as it is now')]
-    #[MCPToolExecutionTimeout(45, 'one inspection in the renderer')]
+    #[MCPToolExecutionTimeout(80, 'one inspection in the renderer; PHP waits up to 65 s for the renderer')]
     #[MCPToolSummary('Computed styles (non-default or listed properties), box model and the CSS rules behind each value, for one element ref.')]
     public function browserInspect(
         BrowserInspectRequestDto $requestDto,
@@ -130,9 +132,7 @@ class BrowserDesignMCPPackage extends MCPPackage
         AgentToolCallProvenance $callProvenance
     ): BrowserMcpResponseDto {
         $browserAgentSessionsService->requireInteractiveBrowsing();
-        if (trim($requestDto->ref) === '') {
-            throw new BadRequestException('browserInspect needs the element\'s `ref` from the newest snapshot.');
-        }
+        BrowserSessionMCPPackage::throwUnlessValidRef($requestDto->ref, __FUNCTION__, true);
         $properties = [];
         foreach ($requestDto->properties as $property) {
             if (is_string($property) && preg_match('/^-{0,2}[a-z][a-z0-9-]{0,63}$/i', trim($property)) === 1) {
@@ -213,7 +213,9 @@ class BrowserDesignMCPPackage extends MCPPackage
             $browserFileToStore->sourceUrl = $browserAssetFile->sourceUrl;
             $browserFileToStore->pageUrl = $browserSession->currentUrl;
             $browserFileToStore->contentType = $browserFileSinksService->detectContentType($bytes, $browserAssetFile->mimeType);
+            // the renderer's names (logo.png, stylesheet-01-main.css, …) are kept: design-tokens.json refers to them
             $browserFileToStore->fileName = $browserFileSinksService->sanitizeFileName($browserAssetFile->name, ($browserAssetFile->kind ?? 'asset') . '-' . ($storedCount + 1));
+            $browserFileToStore->targetFolder = $browserFileSinksService->buildWebFolder($browserSession->currentUrl);
             $browserFileToStore->setBytes($bytes);
             $browserStoredFile = $browserFileSinksService->storeFile($browserFileToStore, $fileSinkContext);
             if (!$browserStoredFile->isStored()) {

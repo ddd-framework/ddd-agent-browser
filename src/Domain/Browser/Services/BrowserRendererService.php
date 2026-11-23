@@ -21,6 +21,9 @@ use DDD\Infrastructure\Services\Service;
  */
 class BrowserRendererService extends Service
 {
+    /** @var int Seconds PHP waits for one session action by default: above the renderer's deadlines (navigate 45 s, analyse 60 s) */
+    public const int DEFAULT_SESSION_ACTION_TIMEOUT_SECONDS = 65;
+
     /**
      * The absolute base URL of the stateless deployment; null when none is configured.
      * @return string|null
@@ -83,7 +86,7 @@ class BrowserRendererService extends Service
             $browserSessionRequest,
             $sessionBaseUrl,
             $this->getCallerToken(),
-            max(5, (int)(Config::get('Browser.renderer.sessionActionTimeoutSeconds') ?? 40))
+            max(5, (int)(Config::get('Browser.renderer.sessionActionTimeoutSeconds') ?? static::DEFAULT_SESSION_ACTION_TIMEOUT_SECONDS))
         );
         return $argusBrowserSessionAnswer;
     }

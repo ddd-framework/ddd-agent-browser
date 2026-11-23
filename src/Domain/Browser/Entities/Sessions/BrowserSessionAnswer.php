@@ -72,8 +72,20 @@ class BrowserSessionAnswer extends ValueObject
     /** @var string|null The changed region after an act (≤ 1,500 characters) */
     public ?string $changed = null;
 
-    /** @var string|null A tab an act opened */
+    /** @var string|null A tab an act opened (the first of `newTabs`) */
     public ?string $newTab = null;
+
+    /** @var string[] Tabs an act opened */
+    public array $newTabs = [];
+
+    /** @var string[] Dialogs an act met (dismissed) */
+    public array $dialogs = [];
+
+    /** @var bool|null Whether a sent release token let its request through (act) */
+    public ?bool $releaseUsed = null;
+
+    /** @var string|null Why a session is gone (`idle`, `maxAge`, `closed`, `transferLimit`, `shutdown`, `unknown`) */
+    public ?string $sessionGoneCause = null;
 
     public ?BrowserSubmissions $submissions = null;
 
@@ -144,7 +156,11 @@ class BrowserSessionAnswer extends ValueObject
         }
         $this->navigated = isset($data->navigated) ? (bool)$data->navigated : null;
         $this->changed = static::readString($data, 'changed');
-        $this->newTab = static::readString($data, 'newTab');
+        $this->newTabs = static::readStringList($data, 'newTabs');
+        $this->newTab = static::readString($data, 'newTab') ?? ($this->newTabs[0] ?? null);
+        $this->dialogs = static::readStringList($data, 'dialogs');
+        $this->releaseUsed = isset($data->releaseUsed) ? (bool)$data->releaseUsed : null;
+        $this->sessionGoneCause = static::readString($data, 'cause');
         $this->submissions = static::readSubmissions($data);
         if ($this->action === BrowserRendererContract::SESSION_ACTION_SCREENSHOT) {
             $this->imageContent = static::readString($data, 'content');
@@ -155,7 +171,8 @@ class BrowserSessionAnswer extends ValueObject
         }
         $this->tabs = static::readTabs($data);
         if (isset($data->tokens)) {
-            $designTokensJson = is_string($data->tokens) ? $data->tokens : json_encode($data->tokens, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            // passed through as the renderer built it (the host stores it as design-tokens.json)
+            $designTokensJson = is_string($data->tokens) ? $data->tokens : json_encode($data->tokens, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
             $this->designTokensJson = is_string($designTokensJson) ? $designTokensJson : null;
         }
         $this->analysisSummary = static::readString($data, 'summary');
@@ -168,6 +185,25 @@ class BrowserSessionAnswer extends ValueObject
         return is_scalar($value) && (string)$value !== '' ? (string)$value : null;
     }
 
+    /**
+     * @return string[] the strings of a list field (an object entry gives its `tab`, `message` or `type`)
+     */
+    protected static function readStringList(object $data, string $fieldName): array
+    {
+        $strings = [];
+        foreach (is_array($data->$fieldName ?? null) ? $data->$fieldName : [] as $entry) {
+            if (is_scalar($entry)) {
+                $strings[] = (string)$entry;
+            } elseif (is_object($entry)) {
+                $entryText = $entry->tab ?? $entry->message ?? $entry->type ?? null;
+                if (is_scalar($entryText)) {
+                    $strings[] = (string)$entryText;
+                }
+            }
+        }
+        return $strings;
+    }
+
     protected static function readSubmissions(object $data): BrowserSubmissions
     {
         $browserSubmissions = new BrowserSubmissions();
@@ -176,6 +212,7 @@ class BrowserSessionAnswer extends ValueObject
                 continue;
             }
             $browserSubmission = new BrowserSubmission();
+            $browserSubmission->kind = static::readString($submissionData, 'kind') ?? BrowserSubmission::KIND_SUBMISSION;
             $browserSubmission->method = static::readString($submissionData, 'method');
             $browserSubmission->target = static::readString($submissionData, 'target');
             $browserSubmission->releaseToken = static::readString($submissionData, 'releaseToken');

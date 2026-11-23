@@ -46,15 +46,49 @@ class BrowserAgentAnswersService extends Service
         }
         return match ($browserSessionAnswer->reason) {
             BrowserRendererContract::REASON_OK, BrowserRendererContract::REASON_CLOSED => null,
-            BrowserRendererContract::REASON_SESSION_GONE => 'SESSION_GONE: the browser session ended (idle, limit or restart). Open the page again with browserNavigate.',
-            BrowserRendererContract::REASON_STALE_REF => 'STALE_REF: that ref is from an older snapshot. Take browserSnapshot (mode interactive) and use a ref from it.',
-            BrowserRendererContract::REASON_FIELD_REFUSED => 'FIELD_REFUSED: that field takes a password or payment data; typing into it is refused. A login wall ends the path: say so.',
+            BrowserRendererContract::REASON_SESSION_GONE => 'SESSION_GONE' . ($browserSessionAnswer->sessionGoneCause !== null ? ' (' . $browserSessionAnswer->sessionGoneCause . ')' : '') . ': the browser session ended. Open the page again with browserNavigate.',
+            BrowserRendererContract::REASON_STALE_REF => 'STALE_REF: that ref is not in the tab\'s newest snapshot, or the page changed. Take browserSnapshot (mode interactive) and use a ref from it.',
+            BrowserRendererContract::REASON_FIELD_REFUSED => 'FIELD_REFUSED: that field takes a password, PIN, TAN, card or bank data; typing into it is refused. A login or payment wall ends the path: say so.',
+            BrowserRendererContract::REASON_NOT_A_FIELD => 'NOT_A_FIELD: that ref is no text field. Take browserSnapshot (mode interactive) and pick a field\'s ref.',
+            BrowserRendererContract::REASON_INVALID_OPTION => 'INVALID_OPTION: the field offers none of these values. Read its options in browserSnapshot (mode interactive) and pick one of them.',
+            BrowserRendererContract::REASON_RELEASE_INVALID => 'RELEASE_INVALID: the operator\'s release no longer fits (expired after 15 minutes, other values, or another session). Nothing was sent. Repeat the action to ask the operator again.',
+            BrowserRendererContract::REASON_ACTION_FAILED => 'ACTION_FAILED: the page did not take the action (element hidden, covered or disabled). Take a snapshot, scroll it into view or pick another ref; do not repeat it unchanged.',
+            BrowserRendererContract::REASON_ACTION_TIMEOUT => 'ACTION_TIMEOUT: the page did not react in time. Take a snapshot to see its state before you try again.',
+            BrowserRendererContract::REASON_TAB_LIMIT => 'TAB_LIMIT: a session has at most 3 tabs. Close one with browserTabs (action close) first.',
+            BrowserRendererContract::REASON_NO_SUCH_TAB => 'NO_SUCH_TAB: that tab does not exist. List the tabs with browserTabs.',
+            BrowserRendererContract::REASON_LIMIT_REACHED => 'LIMIT_REACHED: the session used up its navigations, time or transfer. Close it with browserClose and say what you found so far; open a new session only if the task needs it.',
+            BrowserRendererContract::REASON_OUT_OF_RANGE => 'OUT_OF_RANGE: that part or position is beyond the page. Use a smaller part number (part 1 is the top).',
+            BrowserRendererContract::REASON_NO_PAGE => 'NO_PAGE: the tab shows no page yet. Open one with browserNavigate.',
+            BrowserRendererContract::REASON_UNSUPPORTED_FRAME => 'UNSUPPORTED_FRAME: this analysis works only on the main page, not inside an embedded frame. Pick a ref without the frame prefix.',
+            BrowserRendererContract::REASON_BUSY => 'BUSY: the session is still working on earlier actions. Wait a few seconds, then try once more.',
             BrowserRendererContract::REASON_BLOCKED => 'BLOCKED: the address is not public (or a redirect led to one). Nothing was loaded; do not retry it.',
+            BrowserRendererContract::REASON_UNRESOLVABLE => 'UNRESOLVABLE: the host name does not exist. Check the address for a typo; do not guess others.',
+            BrowserRendererContract::REASON_TOO_MANY_REDIRECTS => 'TOO_MANY_REDIRECTS: the site redirects in a loop. Do not retry it.',
+            BrowserRendererContract::REASON_FETCH_FAILED => 'FETCH_FAILED: the site did not deliver the page. Try once more later or say it is unreachable.',
             BrowserRendererContract::REASON_BOT_CHALLENGE => 'BOT_CHALLENGE' . ($browserSessionAnswer->challengeVendor !== null ? ' (' . $browserSessionAnswer->challengeVendor . ')' : '') . ': the site shows a bot challenge. It is never solved; one attempt per site. Read the text with getWebPageAsMarkdown if it is offered.',
-            BrowserRendererContract::REASON_TIMEOUT => 'TIMEOUT: the page did not answer in time.',
+            BrowserRendererContract::REASON_TIMEOUT => 'TIMEOUT: the page did not answer in time. Try once more or say it is too slow.',
+            BrowserRendererContract::REASON_CONSENT_REQUIRED => $this->buildDroppedSubmissionsText($browserSessionAnswer),
             null => 'The browser renderer answered without an outcome.',
             default => $browserSessionAnswer->reason . ': the action did not complete.',
         };
+    }
+
+    /**
+     * The sentence for requests the renderer dropped for good (script requests that carried typed text to another
+     * site): there is no release and nothing to ask the operator.
+     * @param BrowserSessionAnswer $browserSessionAnswer
+     * @return string
+     */
+    public function buildDroppedSubmissionsText(BrowserSessionAnswer $browserSessionAnswer): string
+    {
+        $targets = [];
+        foreach ($browserSessionAnswer->submissions?->getElements() ?? [] as $browserSubmission) {
+            if (!$browserSubmission->isReleasable()) {
+                $targets[] = strtoupper((string)$browserSubmission->method) . ' ' . $browserSubmission->target;
+            }
+        }
+        return 'DROPPED: the page tried to send your typed text to another site by script (' . implode(', ', array_unique($targets))
+            . '). That request was dropped for good; there is no release, so do not ask the operator for it. Continue without it or say the page needs it.';
     }
 
     /**
@@ -116,8 +150,18 @@ class BrowserAgentAnswersService extends Service
         } elseif ($browserSessionAnswer->finalUrl !== null) {
             $statusParts[] = 'still on ' . $browserSessionAnswer->finalUrl;
         }
-        if ($browserSessionAnswer->newTab !== null) {
+        if ($browserSessionAnswer->newTabs !== []) {
+            $statusParts[] = 'opened tab ' . implode(', ', $browserSessionAnswer->newTabs);
+        } elseif ($browserSessionAnswer->newTab !== null) {
             $statusParts[] = 'opened tab ' . $browserSessionAnswer->newTab;
+        }
+        if ($browserSessionAnswer->dialogs !== []) {
+            $statusParts[] = count($browserSessionAnswer->dialogs) . ' dialog(s) dismissed';
+        }
+        if ($browserSessionAnswer->releaseUsed === true) {
+            $statusParts[] = 'the released request was sent';
+        } elseif ($browserSessionAnswer->releaseUsed === false) {
+            $statusParts[] = 'the release was not used (no matching request)';
         }
         $lines = [implode(' · ', $statusParts)];
         if ($browserSessionAnswer->title !== null && $browserSessionAnswer->navigated === true) {

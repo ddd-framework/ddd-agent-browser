@@ -118,8 +118,16 @@ class BrowserAgentSessionsService extends Service
         if ($browserSessionAnswer->reason !== BrowserRendererContract::REASON_CONSENT_REQUIRED) {
             return $browserSessionAnswer;
         }
-        $browserSubmission = $browserSessionAnswer->submissions?->first();
-        if (!$browserSubmission instanceof BrowserSubmission || $browserSubmission->releaseToken === null) {
+        $browserSubmission = null;
+        foreach ($browserSessionAnswer->submissions?->getElements() ?? [] as $candidateSubmission) {
+            if ($candidateSubmission->isReleasable()) {
+                $browserSubmission = $candidateSubmission;
+                break;
+            }
+        }
+        if (!$browserSubmission instanceof BrowserSubmission) {
+            // only dropped requests: no release exists, nothing to ask (the answer text says so)
+            $this->getBrowserSessionsService()->recordEvent($browserSession, BrowserSessionEvent::EVENT_REFUSED, $toolName, $browserSessionAnswer->finalUrl, 'typed text to another site dropped by the renderer');
             return $browserSessionAnswer;
         }
         $ownerConsentsService = $this->getOwnerConsentsService();

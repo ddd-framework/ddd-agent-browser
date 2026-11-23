@@ -27,10 +27,14 @@ application never renders or executes foreign content itself.
 5. Switch sessions on: `Browser.sessions.enabled` (`config/app/Browser/sessions.php`). Interactive browsing is for
    staff only: by default an admin account (`BrowserAccessService::isInteractiveBrowsingAllowed()`, override in a
    same-path subclass).
-6. A file sink for downloads and exported assets: a service implementing
+6. A file sink for exported assets and design token files: a service implementing
    `DDD\Domain\Browser\Services\BrowserFileSink` (autoconfigured, tag `browser.file_sink`). It is the host's upload
    intake: type from the bytes, executable content refused, malware scan; the file lands in the workspace as
    untrusted with its origin. Without it `browserExportAssets` refuses and design tokens are not saved as a file.
+   Target convention: everything taken from one site goes to the folder `web/<domain>` (`BrowserFileToStore::$targetFolder`)
+   under the renderer's file names (`design-tokens.json`, `logo.svg`, `logo.png`, `logo-original.<ext>`,
+   `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg`, `font-<name>`), side by side: the token
+   file names the logo files.
 7. With ddd-agents: bind the skills in the host's `config/app/AI/skillPackages.php`:
    `'Browser.Session' => ['browser.session']`, `'Browser.Design' => ['browser.design']`, and gate them for staff.
 8. A daily cron for `app:browser:purge-sessions` (`Browser.sessions.retentionDays`, default 90).
@@ -66,8 +70,10 @@ PHP side needs at least `BrowserRendererContract::MINIMUM_CONTRACT_VERSION` with
 contract only grows: the renderer is deployed first, then the PHP release that reads a new field.
 
 - **Health:** `GET /healthz` (no auth): 200 `{status: "ok", contractVersion, chromeVersion, role}` or 503
-  `{status: "starting", contractVersion, role}`. `app:browser:check-renderer` compares `contractVersion` with the
-  package's constant.
+  `{status: "starting", contractVersion, role}`. `contractVersion` is the full release tag (e.g. `0.1.0-rc.3`).
+  `app:browser:check-renderer` compares it by semver compatibility, not by string: same major, core version at least
+  `MINIMUM_CONTRACT_VERSION`, a pre-release suffix allowed. The release workflow checks that `CONTRACT_VERSION` is the
+  core of the release tag.
 - **Role:** env `RENDER_ROLE=stateless|session|all` (default `stateless`). Session routes exist only in `session` and
   `all`; outside its role the renderer answers 404 (the check command says so).
 - **Caller classes:** the renderer's env `RENDER_TOKENS_<CLASS>` defines a class (e.g. `SHOP_PROD` → caller class
@@ -79,26 +85,47 @@ contract only grows: the renderer is deployed first, then the PHP release that r
     `{status, error}` with that HTTP status.
   - Every body carries `sessionKey` (random 32 hex) and an optional `tab` (`t1`, default the active tab).
     `navigate` without `sessionKey` opens a session and returns its key. A key of another caller class, a closed or an
-    expired session answers `reason: SESSION_GONE`.
+    expired session answers `reason: SESSION_GONE` with `cause` (idle, maxAge, closed, transferLimit, shutdown,
+    unknown).
+  - Refs: `e12`, or with a frame prefix `f3e12` (`BrowserRendererContract::REF_PATTERN`, checked before the call).
   - `navigate` `{url, tab?, newTab?, cookieBanners?}` → `{sessionKey, tab, finalUrl, statusCode, title, redirects[],
     consent: {cmp, action}, challengeVendor?, snapshot: {mode: "outline", text, …}}`
   - `snapshot` `{mode: outline|interactive|text, ref?, find?, cursor?, maxChars? (6000)}` → `{text, nextCursor|null,
     items}`; a ref of an older snapshot → `STALE_REF`.
   - `act` `{action: click|type|select|press|scroll, ref, text?, submit?, values?, key?, direction?, releaseToken?}` →
-    `{url, title, navigated, changed (≤ 1,500 characters), newTab?, submissions[]}`; reasons `OK`, `STALE_REF`,
-    `FIELD_REFUSED`, `CONSENT_REQUIRED`, …
-  - `CONSENT_REQUIRED`: `submissions[{method, target (origin + path), fields[{name, value, typed}], releaseToken,
-    expiresAt}]`. PHP keeps the token and asks the operator; after the yes it repeats the same act with
-    `releaseToken`, which lets exactly one matching request through, once (method + origin + path + hash of the field
-    names and typed values).
+    `{url, title, navigated, changed (≤ 1,500 characters), newTabs[], dialogs[], released[], releaseUsed (when a
+    releaseToken was sent), submissions[]}`.
+  - `CONSENT_REQUIRED`: `submissions[{kind, method, target (origin + path), url, resourceType, frame, fields[{name,
+    value, typed}], typed[], releaseToken, expiresAt}]`. `kind: submission` is releasable: PHP asks the operator and,
+    after the yes, repeats the same act with `releaseToken`, which lets exactly one matching request through, once
+    (method + origin + path + hash of the field names and typed values; 15 minutes, this session only). `kind:
+    dropped` (a script request carrying typed text to another site, `releaseToken: null`) is gone for good: the tool
+    says so and asks nobody.
+  - Reasons: `OK`, `SESSION_GONE`, `STALE_REF`, `BLOCKED`, `UNRESOLVABLE`, `TOO_MANY_REDIRECTS`, `TIMEOUT`,
+    `FETCH_FAILED`, `BOT_CHALLENGE` (`challengeVendor`), `CONSENT_REQUIRED`, `FIELD_REFUSED`, `NOT_A_FIELD`,
+    `INVALID_OPTION`, `RELEASE_INVALID`, `ACTION_FAILED`, `ACTION_TIMEOUT`, `TAB_LIMIT`, `NO_SUCH_TAB`, `LIMIT_REACHED`,
+    `OUT_OF_RANGE`, `NO_PAGE`, `UNSUPPORTED_FRAME`, `BUSY`; each becomes a tool sentence with the next move
+    (`BrowserAgentAnswersService::buildRefusalText()`).
+  - Deadlines in the renderer: navigate 45 s, analyse 60 s, others 30–40 s. PHP waits up to
+    `Browser.renderer.sessionActionTimeoutSeconds` (65); the tools' execution ceilings are above that (80 s, 140 s for
+    a tool that may call twice).
   - `screenshot` `{target: viewport|element|fullPage, ref?, fromY?, height?, format?, quality?}` → `{content (base64),
     format, width, height, truncated}`. PHP cuts the parts (4,000 px as two pictures) and decodes the image through
     Core's `RasterImageDecoder` (PNG/JPEG only).
   - `tabs` `{action: list|open|select|close, tab?, url?}` → `{tabs[{tab, url, title, active}]}`
-  - `analyse` `{name: design|inspect|assets, ref?, properties?, kinds?}`: `design` → `{tokens (the content of
-    design-tokens.json), summary (markdown ≤ 5,000)}`; `inspect` → `{element, styles, box, rules[], summary}`;
-    `assets` → `{files[{kind, name, mimeType, sourceUrl, size, content (base64)}]}` — the host's file sink stores them;
-    the type is read from the bytes (never the claimed `mimeType`), an SVG is only ever a file, never executed.
+  - `analyse` `{name: design|inspect|assets, ref?, properties?, kinds?}`:
+    - `design` → `{tokens, summary (markdown ≤ 5,000)}`. `tokens` is passed through unchanged and stored as
+      `web/<domain>/design-tokens.json`: `palette {primary, accent, text, textMuted, surface, background, border,
+      link}`, `paletteDetails`, `chart[]`, `contrast[]`, `typography.h1|h2|h3|body|button {family, stack, category,
+      fallback, …}`, `fonts[]`, `scales.radius|shadow|spacing [{value, count}]`, `components`, `logo {file: "logo.png",
+      svgFile, onDarkFile, …}`, `customProperties {total, top[]}`, `source {url, title, fetchedAt, viewport}`.
+    - `inspect` → `{element, styles, box, rules[], summary}` (main frame only).
+    - `assets` (`kinds`: stylesheets, logo, screenshots, fonts) → `{files[{kind, name, mimeType, sourceUrl, size,
+      content (base64)}], skipped[], note}`. Names: `logo.svg` (sanitized), `logo.png`, `logo-original.<ext>`,
+      `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg`, `font-<name>`. The host's file
+      sink stores them under these names next to `design-tokens.json`; the type is read from the bytes (the
+      `mimeType` is a hint), an SVG is only ever a stored file.
+  - There is no `/browser/fetch` route: asset bytes come only through `analyse assets`.
   - `log` `{since?}` → `{events[{seq, time, type, …}], nextSeq}`
   - `close` → `{reason: "CLOSED"}`
 

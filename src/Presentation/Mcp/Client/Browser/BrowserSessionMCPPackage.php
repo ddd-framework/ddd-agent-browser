@@ -77,7 +77,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolReturnsUntrustedContent('the text of a third-party web page')]
     #[MCPToolFetchesModelChosenUrl('url')]
     #[MCPToolRefreshesState('a navigation shows the page as it is now')]
-    #[MCPToolExecutionTimeout(45, 'one navigation (≤ 30 s in the renderer) and the outline')]
+    #[MCPToolExecutionTimeout(140, 'a navigation and one more in a fresh session after SESSION_GONE; PHP waits up to 65 s per renderer call')]
     #[MCPToolSummary('Open a URL in the conversation\'s browser session (first call opens it); answers final URL, status, redirects, cookie-banner outcome and an outline. URL must come from the operator or a shown result, else the operator is asked.')]
     public function browserNavigate(
         BrowserNavigateRequestDto $requestDto,
@@ -121,7 +121,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('the text of a third-party web page')]
     #[MCPToolRefreshesState('a snapshot shows the page as it is now')]
-    #[MCPToolExecutionTimeout(45, 'one snapshot in the renderer')]
+    #[MCPToolExecutionTimeout(80, 'one snapshot in the renderer; PHP waits up to 65 s for the renderer')]
     #[MCPToolSummary('A paged view of the session\'s page: outline | interactive (refs for links, buttons, fields) | text; narrow with ref or find, continue with cursor.')]
     public function browserSnapshot(
         BrowserSnapshotRequestDto $requestDto,
@@ -135,6 +135,7 @@ class BrowserSessionMCPPackage extends MCPPackage
         if (!in_array($mode, static::SNAPSHOT_MODES, true)) {
             throw new BadRequestException('`mode` is one of: ' . implode(', ', static::SNAPSHOT_MODES) . '.');
         }
+        static::throwUnlessValidRef($requestDto->ref, __FUNCTION__, false);
         $browserSession = $browserAgentSessionsService->findSessionOfCall($callProvenance, false);
         $browserSessionRequest = BrowserSessionRequest::forAction(BrowserRendererContract::SESSION_ACTION_SNAPSHOT, $browserSession->sessionKey);
         $browserSessionRequest->mode = $mode;
@@ -157,7 +158,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('the text of a third-party web page')]
     #[MCPToolRefreshesState('a click changes the page')]
-    #[MCPToolExecutionTimeout(45, 'one action in the renderer')]
+    #[MCPToolExecutionTimeout(140, 'an action the renderer stops as a submission and its released repeat; PHP waits up to 65 s per renderer call')]
     #[MCPToolSummary('Click a ref (link/button) of the newest snapshot; answers what changed. A form submission stops for the operator\'s yes.')]
     public function browserClick(
         BrowserClickRequestDto $requestDto,
@@ -181,7 +182,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('the text of a third-party web page')]
     #[MCPToolRefreshesState('typing changes the page')]
-    #[MCPToolExecutionTimeout(45, 'one action in the renderer')]
+    #[MCPToolExecutionTimeout(140, 'an action the renderer stops as a submission and its released repeat; PHP waits up to 65 s per renderer call')]
     #[MCPToolSummary('Type the operator\'s text (≤ 200 chars) into a field ref; other text asks the operator. submit presses Enter; a sending form stops for the operator\'s yes.')]
     public function browserType(
         BrowserTypeRequestDto $requestDto,
@@ -214,7 +215,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('the text of a third-party web page')]
     #[MCPToolRefreshesState('a selection changes the page')]
-    #[MCPToolExecutionTimeout(45, 'one action in the renderer')]
+    #[MCPToolExecutionTimeout(140, 'an action the renderer stops as a submission and its released repeat; PHP waits up to 65 s per renderer call')]
     #[MCPToolSummary('Select options (only ones the page offers) of a select-field ref; answers what changed.')]
     public function browserSelectOption(
         BrowserSelectOptionRequestDto $requestDto,
@@ -241,7 +242,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('the text of a third-party web page')]
     #[MCPToolRefreshesState('a key press changes the page')]
-    #[MCPToolExecutionTimeout(45, 'one action in the renderer')]
+    #[MCPToolExecutionTimeout(140, 'an action the renderer stops as a submission and its released repeat; PHP waits up to 65 s per renderer call')]
     #[MCPToolSummary('Press a key (Enter, Escape, Tab, arrows) on the focused element or a ref; answers what changed.')]
     public function browserPressKey(
         BrowserPressKeyRequestDto $requestDto,
@@ -268,7 +269,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('the text of a third-party web page')]
     #[MCPToolRefreshesState('scrolling changes the view')]
-    #[MCPToolExecutionTimeout(45, 'one action in the renderer')]
+    #[MCPToolExecutionTimeout(80, 'one action in the renderer; PHP waits up to 65 s for the renderer')]
     #[MCPToolSummary('Scroll (down|up|top|bottom) or bring a ref into view; answers the interactive elements now in view.')]
     public function browserScroll(
         BrowserScrollRequestDto $requestDto,
@@ -298,7 +299,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolEffect(MCPToolEffect::READ)]
     #[MCPToolReturnsUntrustedContent('the pixels of a third-party web page')]
     #[MCPToolRefreshesState('a screenshot shows the page as it is now')]
-    #[MCPToolExecutionTimeout(45, 'one capture in the renderer')]
+    #[MCPToolExecutionTimeout(80, 'one capture in the renderer; PHP waits up to 65 s for the renderer')]
     #[MCPToolSummary('Pictures of the session\'s current page: viewport (default), element by ref, or fullPagePart (part 1 = top 4,000 px as two pictures).')]
     public function browserScreenshot(
         BrowserScreenshotRequestDto $requestDto,
@@ -311,8 +312,8 @@ class BrowserSessionMCPPackage extends MCPPackage
         if (!in_array($target, static::SCREENSHOT_TARGETS, true)) {
             throw new BadRequestException('`target` is one of: ' . implode(', ', static::SCREENSHOT_TARGETS) . '.');
         }
-        if ($target === 'element' && ($requestDto->ref === null || $requestDto->ref === '')) {
-            throw new BadRequestException('`target: element` needs the element\'s `ref`.');
+        if ($target === 'element') {
+            static::throwUnlessValidRef($requestDto->ref, __FUNCTION__, true);
         }
         $part = max(1, (int)($requestDto->part ?? 1));
         $browserSession = $browserAgentSessionsService->findSessionOfCall($callProvenance, false);
@@ -362,7 +363,7 @@ class BrowserSessionMCPPackage extends MCPPackage
     #[MCPToolReturnsUntrustedContent('titles and addresses of third-party web pages')]
     #[MCPToolFetchesModelChosenUrl('url')]
     #[MCPToolRefreshesState('tabs change')]
-    #[MCPToolExecutionTimeout(45, 'one tab action in the renderer')]
+    #[MCPToolExecutionTimeout(80, 'one tab action in the renderer; PHP waits up to 65 s for the renderer')]
     #[MCPToolSummary('The session\'s tabs: list (default), open with url, select or close by tab id.')]
     public function browserTabs(
         BrowserTabsRequestDto $requestDto,
@@ -403,7 +404,7 @@ class BrowserSessionMCPPackage extends MCPPackage
      */
     #[MCPTool]
     #[MCPToolEffect(MCPToolEffect::READ)]
-    #[MCPToolExecutionTimeout(20, 'one close in the renderer')]
+    #[MCPToolExecutionTimeout(80, 'one close in the renderer; PHP waits up to 65 s for the renderer')]
     #[MCPToolSummary('Close the conversation\'s browser session.')]
     public function browserClose(
         BrowserCloseRequestDto $requestDto,
@@ -459,13 +460,28 @@ class BrowserSessionMCPPackage extends MCPPackage
         AgentToolCallProvenance $callProvenance,
         string $toolName
     ): BrowserMcpResponseDto {
-        if ($browserSessionRequest->ref === null && in_array($browserSessionRequest->actAction, ['click', 'type', 'select'], true)) {
-            throw new BadRequestException($toolName . ' needs a `ref` from the newest snapshot (browserSnapshot mode interactive).');
-        }
+        static::throwUnlessValidRef($browserSessionRequest->ref, $toolName, in_array($browserSessionRequest->actAction, ['click', 'type', 'select'], true));
         $browserSessionRequest->sessionKey = $browserSession->sessionKey;
         $browserSessionAnswer = $browserAgentSessionsService->runActWithSubmissionRule($callProvenance, $browserSession, $browserSessionRequest, $toolName);
         $this->throwIfRefused($browserSessionAnswer, $browserAgentAnswersService);
         return BrowserMcpResponseDto::withText($browserAgentAnswersService->buildActText($browserSessionAnswer, $actDescription));
+    }
+
+    /**
+     * A ref has the renderer's shape (`e12`, or `f3e12` inside a frame); a required one must be present.
+     * @throws BadRequestException
+     */
+    public static function throwUnlessValidRef(?string $ref, string $toolName, bool $isRequired): void
+    {
+        if ($ref === null || trim($ref) === '') {
+            if ($isRequired) {
+                throw new BadRequestException($toolName . ' needs a `ref` from the newest snapshot (browserSnapshot mode interactive), like `e12` or `f3e12`.');
+            }
+            return;
+        }
+        if (!BrowserRendererContract::isValidRef(trim($ref))) {
+            throw new BadRequestException('`' . $ref . '` is no ref: refs look like `e12` (or `f3e12` inside a frame) and come from the newest snapshot.');
+        }
     }
 
     /**

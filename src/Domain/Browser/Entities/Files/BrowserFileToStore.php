@@ -16,6 +16,12 @@ class BrowserFileToStore extends ValueObject
     /** @var string|null A file name without a path (already sanitised; the sink may still rename it) */
     public ?string $fileName = null;
 
+    /**
+     * @var string|null The folder the file belongs in, relative to the workspace: `web/<domain>` for everything taken
+     *      from one site (design-tokens.json and the assets side by side, so the token file's logo paths resolve)
+     */
+    public ?string $targetFolder = null;
+
     /** @var string|null The type read from the bytes (never the type a server claimed) */
     public ?string $contentType = null;
 
