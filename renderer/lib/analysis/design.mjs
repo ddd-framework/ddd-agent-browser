@@ -148,7 +148,8 @@ export const buildDesignTokens = (raw, { fontFaces = [], variableUses = new Map(
   const brand = mergeSimilar(brandWeights, 20);
   const primary = buttons.primary && saturation(buttons.primary.background) >= 0.2 ? buttons.primary.background : (brand[0]?.hex ?? null);
   const accent = brand.find(entry => primary && colourDistance(entry.hex, primary) >= 80)?.hex ?? null;
-  const border = borders[0]?.hex ?? null;
+  // a border colour is the neutral line colour of the page; a brand-coloured border (outline buttons) only without one
+  const border = borders.find(entry => !isBrandLike(entry.hex))?.hex ?? borders[0]?.hex ?? null;
 
   const chosen = new Set([background, surface, text, textMuted, primary, accent, border].filter(Boolean));
   const others = mergeSimilar({ ...Object.fromEntries(backgrounds.map(entry => [entry.hex, entry.weight])), ...Object.fromEntries(texts.map(entry => [entry.hex, entry.weight / 10])) })
