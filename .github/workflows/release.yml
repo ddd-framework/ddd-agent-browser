@@ -1,0 +1,97 @@
+name: Release
+
+# Pushing a tag vX.Y.Z (the version in composer.json) releases the module:
+#  - the Composer package (Packagist reads the tag from the repository);
+#  - the browser renderer image ghcr.io/ddd-framework/ddd-browser-renderer:X.Y.Z, built from renderer/ with the tag's
+#    version written into renderer/package.json first, so GET /healthz reports contractVersion = X.Y.Z. The image build
+#    runs the renderer's unit tests. The package is private (it redistributes Chrome); its visibility is set once in
+#    the organisation's package settings.
+# While renderer/ has no Dockerfile the image job is skipped.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/ddd-framework/ddd-browser-renderer
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      has_renderer: ${{ steps.renderer.outputs.has_renderer }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches the version in composer.json
+        id: version
+        run: |
+          VERSION=$(php -r 'echo json_decode(file_get_contents("composer.json"))->version ?? "";')
+          if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match composer.json version ${VERSION} (expected v${VERSION})" >&2
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Contract constant matches the version
+        run: |
+          CONTRACT=$(grep -oE "CONTRACT_VERSION = '[^']+'" src/Domain/Browser/Entities/Renderer/BrowserRendererContract.php | head -1 | sed -E "s/.*'([^']+)'/\1/")
+          CORE_VERSION=$(echo "${{ steps.version.outputs.version }}" | sed -E 's/[-+].*$//')
+          if [ "${CONTRACT}" != "${CORE_VERSION}" ]; then
+            echo "BrowserRendererContract::CONTRACT_VERSION ${CONTRACT} does not match the release ${CORE_VERSION}" >&2
+            exit 1
+          fi
+      - name: Renderer present
+        id: renderer
+        run: |
+          if [ -f renderer/Dockerfile ] && [ -f renderer/package.json ]; then echo "has_renderer=true" >> "$GITHUB_OUTPUT"; else echo "has_renderer=false" >> "$GITHUB_OUTPUT"; fi
+
+  php:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: imagick, intl
+          coverage: none
+          tools: composer:2.8
+      - run: composer install --no-interaction --no-progress --no-scripts
+      - run: vendor/bin/phpunit
+
+  renderer-image:
+    needs: [verify, php]
+    if: needs.verify.outputs.has_renderer == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Write the release version into renderer/package.json (the contract version /healthz reports)
+        run: |
+          npm version "${{ needs.verify.outputs.version }}" --no-git-tag-version --allow-same-version --prefix renderer
+          node -e 'const v = require("./renderer/package.json").version; if (v !== process.argv[1]) { console.error(`renderer/package.json ${v} != ${process.argv[1]}`); process.exit(1); }' "${{ needs.verify.outputs.version }}"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: renderer
+          push: true
+          tags: ${{ env.IMAGE }}:${{ needs.verify.outputs.version }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.verify.outputs.version }}
