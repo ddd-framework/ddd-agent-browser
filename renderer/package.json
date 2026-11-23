@@ -1,0 +1,25 @@
+{
+  "name": "ddd-browser-renderer",
+  "version": "0.1.0-rc.2",
+  "private": true,
+  "type": "module",
+  "description": "Browser renderer of mgamadeus/ddd-browser: screenshots of public web pages and agent-driven browser sessions with design analysis. Real Google Chrome headed in Xvfb via Patchright, consent banners rejected, every request address-guarded.",
+  "main": "server.mjs",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/units.test.mjs test/browser.test.mjs",
+    "test:integration": "node --test --test-concurrency=1 test/integration/integration.test.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@duckduckgo/autoconsent": "18.9.0",
+    "@ghostery/adblocker": "2.20.3",
+    "camoufox-js": "0.13.0",
+    "patchright": "1.64.3",
+    "playwright-core": "1.62.1",
+    "tldts-experimental": "7.5.5"
+  }
+}
