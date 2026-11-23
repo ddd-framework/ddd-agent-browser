@@ -3,6 +3,7 @@
 // buildDesignTokens() turns it into tokens: palette by role with contrast, :root custom properties, typography, scales,
 // components and the logo. designSummary() is the compact markdown (about 5,000 characters) for the model.
 import { collectDesignInPage } from './design-page.mjs';
+import { exportLogoInPage } from './logo-page.mjs';
 import { CssInspector, countVariableUses, parseFontFaces } from './css.mjs';
 import { colourDistance, contrastGrade, contrastRatio, isBrandLike, mergeSimilar, saturation } from './colour.mjs';
 import { CONSENT_STYLE_MARKER } from '../consent.mjs';
@@ -149,7 +150,8 @@ export const buildDesignTokens = (raw, { fontFaces = [], variableUses = new Map(
   const primary = buttons.primary && saturation(buttons.primary.background) >= 0.2 ? buttons.primary.background : (brand[0]?.hex ?? null);
   const accent = brand.find(entry => primary && colourDistance(entry.hex, primary) >= 80)?.hex ?? null;
   // a border colour is the neutral line colour of the page; a brand-coloured border (outline buttons) only without one
-  const border = borders.find(entry => !isBrandLike(entry.hex))?.hex ?? borders[0]?.hex ?? null;
+  const visibleBorders = borders.filter(entry => colourDistance(entry.hex, background) >= 12);
+  const border = visibleBorders.find(entry => !isBrandLike(entry.hex))?.hex ?? visibleBorders[0]?.hex ?? null;
 
   const chosen = new Set([background, surface, text, textMuted, primary, accent, border].filter(Boolean));
   const others = mergeSimilar({ ...Object.fromEntries(backgrounds.map(entry => [entry.hex, entry.weight])), ...Object.fromEntries(texts.map(entry => [entry.hex, entry.weight / 10])) })
@@ -252,7 +254,8 @@ export const buildDesignTokens = (raw, { fontFaces = [], variableUses = new Map(
   // file names are the ones exportAssets(kinds: logo) writes next to the token file
   const isSvgLogo = logoCandidate && (logoCandidate.type === 'svg' || /\.svg(\?|#|$)/i.test(logoCandidate.url ?? ''));
   const logo = logoCandidate ? {
-    file: 'logo.png', svgFile: isSvgLogo ? 'logo.svg' : null, onDarkFile: null,
+    file: 'logo.png', svgFile: isSvgLogo ? 'logo.svg' : null, onDarkFile: logoCandidate.hasOnDark ? 'logo-on-dark.svg' : null,
+    logoBackground: logoCandidate.background ?? null, backgroundRadius: logoCandidate.radius ?? null, lightDrawing: logoCandidate.lightDrawing ?? null,
     type: logoCandidate.type, url: logoCandidate.url ?? null, svgChars: logoCandidate.svg ? logoCandidate.svg.length : null,
     width: logoCandidate.width, height: logoCandidate.height, alt: logoCandidate.alt, linksToStartPage: logoCandidate.linksToStart, score: logoCandidate.score,
   } : null;
@@ -331,7 +334,7 @@ export const designSummary = (tokens, maxChars = 5000) => {
   const navigation = tokens.components.navigation;
   if (navigation) parts.push(`- navigation: ${navigation.links} links on ${navigation.background}, ${navigation.linkColour} ${navigation.linkFontSize} ${navigation.linkFontWeight}, height ${navigation.height}px${navigation.position === 'sticky' || navigation.position === 'fixed' ? `, ${navigation.position}` : ''}`);
   parts.push('', '### Logo');
-  if (tokens.logo) parts.push(`- ${tokens.logo.type === 'svg' ? `inline SVG (${tokens.logo.svgChars} characters)` : tokens.logo.url}, ${tokens.logo.width}×${tokens.logo.height}${tokens.logo.alt ? `, "${tokens.logo.alt}"` : ''}${tokens.logo.linksToStartPage ? ', links to the start page' : ''}`);
+  if (tokens.logo) parts.push(`- ${tokens.logo.type === 'svg' ? `inline SVG (${tokens.logo.svgChars} characters)` : tokens.logo.url}, ${tokens.logo.width}×${tokens.logo.height}${tokens.logo.logoBackground ? ` on its own ${tokens.logo.logoBackground} surface${tokens.logo.lightDrawing ? ' (light drawing; logo-on-dark.svg without the surface)' : ''}` : ''}${tokens.logo.alt ? `, "${tokens.logo.alt}"` : ''}${tokens.logo.linksToStartPage ? ', links to the start page' : ''}`);
   else parts.push('- no logo found in the header');
   parts.push(...[line('og:image', tokens.ogImage), line('JSON-LD logo', tokens.jsonLdLogo), line('icons', tokens.icons.slice(0, 3).map(icon => icon.url).join(', '))].filter(Boolean));
   parts.push('- A third-party logo is fine in an internal draft, never in something published.');
@@ -354,6 +357,11 @@ export const designSummary = (tokens, maxChars = 5000) => {
 export const extractDesign = async ({ page, cdp, mainFrameId, scopePath = null }) => {
   const raw = await page.evaluate(collectDesignInPage, { scopePath, viewports: 2 });
   if (raw?.error) return { reason: raw.error };
+  const logoCandidate = raw.logoCandidates?.[0];
+  if (logoCandidate) {
+    const surface = await page.evaluate(exportLogoInPage, { path: logoCandidate.path, withPng: false }).catch(() => null);
+    if (surface && !surface.error) Object.assign(logoCandidate, { background: surface.background, radius: surface.radius, lightDrawing: surface.lightDrawing, hasOnDark: Boolean(surface.svgOnDark) });
+  }
   const css = new CssInspector(cdp);
   try {
     await css.enable();

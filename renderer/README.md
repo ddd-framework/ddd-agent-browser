@@ -149,8 +149,10 @@ provider's frame: `FIELD_REFUSED`. Downloads, file choosers, dialogs (dismissed)
     rendered, size, weight, line height, letter spacing, transform, colour, `fontFiles` (from `@font-face`);
   - `fonts[]`, `scales.radius|shadow|spacing` (value and count, most frequent first);
   - `components.primaryButton|secondaryButton` (with `hover`), `card`, `navigation`;
-  - `logo {file: "logo.png", svgFile: "logo.svg"|null, onDarkFile: null, type, url, width, height, alt,
-    linksToStartPage}`: the file names are those `assets` (kind `logo`) delivers; `icons`, `ogImage`, `jsonLdLogo`;
+  - `logo {file: "logo.png", svgFile: "logo.svg"|null, onDarkFile: "logo-on-dark.svg"|null, logoBackground,
+    backgroundRadius, lightDrawing, type, url, width, height, alt, linksToStartPage}`: the file names are those
+    `assets` (kind `logo`) delivers. `logoBackground` is the surface the logo sits on in the page (a wrapper's
+    background, e.g. a pill); `onDarkFile` exists when the drawing itself is light; `icons`, `ogImage`, `jsonLdLogo`;
   - `customProperties`: `:root` custom properties resolved, with how often stylesheets read them (top 40);
   - `source {url, title, fetchedAt, viewport}`.
 - **`inspect`** (`ref`, optional `properties`) → `element`, `styles` (computed, defaults left out), `box`, `rules[]`
@@ -159,9 +161,12 @@ provider's frame: `FIELD_REFUSED`. Downloads, file choosers, dialogs (dismissed)
 - **`assets`** (`kinds`: stylesheets, logo, screenshots, fonts; default the first three) → `files[{kind, name,
   mimeType, sourceUrl, size, content (base64), …}]`, `skipped[]`, and for fonts a licence `note`. Bytes come from what
   the page already loaded (the tab's network buffer, stylesheet texts over CSS), otherwise from a guarded fetch (every
-  hop checked, the connect pinned to the checked public address, 25 MB per file, 60 MB per call). Names: `logo.svg`
-  (scripts, handlers, external references removed), `logo.png` (the logo as rendered), `logo-original.<ext>` (a raster
-  logo as served), `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg` (up to 8,000 px),
+  hop checked, the connect pinned to the checked public address, 25 MB per file, 60 MB per call). The logo is exported as it is seen: `logo.svg` is
+  self-contained (computed fill, stroke, opacity and fonts written per element, so `currentColor`, `var()` and classes
+  are resolved; hidden elements dropped; the surface of a wrapper as `<rect rx>` behind the drawing; scripts, handlers
+  and external references removed); `logo-on-dark.svg` is the light drawing without its surface; `logo.png` is drawn on
+  a transparent canvas at 2× (RGBA, rounded corners transparent, no page pixels around it); `logo-original.<ext>` is a
+  raster logo as served. Other names: `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg` (up to 8,000 px),
   `font-<name>`. The caller determines types from the bytes; the renderer's `mimeType` is a hint.
 
 ## Environment

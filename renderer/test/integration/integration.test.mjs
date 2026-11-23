@@ -10,6 +10,7 @@ import { test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import { startFixtureServer } from './fixtures.mjs';
 
 const IMAGE = process.env.RENDER_IMAGE ?? 'ddd-browser-renderer:test';
@@ -41,6 +42,44 @@ const session = async (action, body, token = TOKENS.prod) => {
   return json.data;
 };
 const openSessions = new Map();
+/** A minimal PNG reader (8-bit RGB/RGBA, no interlace): colour type and an RGBA pixel getter. */
+const readPng = buffer => {
+  const width = buffer.readUInt32BE(16);
+  const height = buffer.readUInt32BE(20);
+  const colourType = buffer[25];
+  const channels = colourType === 6 ? 4 : 3;
+  const chunks = [];
+  for (let offset = 8; offset < buffer.length;) {
+    const length = buffer.readUInt32BE(offset);
+    if (buffer.toString('ascii', offset + 4, offset + 8) === 'IDAT') chunks.push(buffer.subarray(offset + 8, offset + 8 + length));
+    offset += length + 12;
+  }
+  const data = zlib.inflateSync(Buffer.concat(chunks));
+  const stride = width * channels;
+  const pixels = Buffer.alloc(height * stride);
+  for (let row = 0; row < height; row++) {
+    const filter = data[row * (stride + 1)];
+    for (let index = 0; index < stride; index++) {
+      const raw = data[row * (stride + 1) + 1 + index];
+      const left = index >= channels ? pixels[row * stride + index - channels] : 0;
+      const up = row > 0 ? pixels[(row - 1) * stride + index] : 0;
+      const upLeft = row > 0 && index >= channels ? pixels[(row - 1) * stride + index - channels] : 0;
+      const paeth = () => {
+        const estimate = left + up - upLeft;
+        const [a, b, c] = [Math.abs(estimate - left), Math.abs(estimate - up), Math.abs(estimate - upLeft)];
+        return a <= b && a <= c ? left : b <= c ? up : upLeft;
+      };
+      const predictor = [0, left, up, Math.floor((left + up) / 2), paeth()][filter];
+      pixels[row * stride + index] = (raw + predictor) & 0xff;
+    }
+  }
+  const pixel = (x, y) => {
+    const start = y * stride + x * channels;
+    return [pixels[start], pixels[start + 1], pixels[start + 2], channels === 4 ? pixels[start + 3] : 255];
+  };
+  return { width, height, colourType, pixel };
+};
+
 const hitsFor = prefix => fixtures.hits.filter(hit => hit.path.startsWith(prefix));
 const refOf = (text, pattern) => {
   const match = text.match(new RegExp(`${pattern}[^\\n]*\\[ref=((?:f\\d+)?e\\d+)\\]`));
@@ -233,7 +272,7 @@ test('design: extractDesign finds the fixture tokens, inspect names the rule and
   assert.equal(tokens.typography.h1.category, 'sans-serif');
   assert.equal(tokens.typography.h1.fallback, 'Inter');
   assert.match(tokens.typography.h1.fontFiles[0].url, /\/fonts\/fixture-sans\.woff2$/);
-  assert.deepEqual(tokens.scales.radius.map(entry => entry.value).sort(), ['16px', '8px']);
+  assert.deepEqual(tokens.scales.radius.map(entry => entry.value).sort(), ['16px', '8px', '999px']);
   assert.equal(tokens.components.primaryButton.radius, '8px');
   assert.equal(tokens.components.primaryButton.hover['background-color'], '#075e45');
   assert.equal(tokens.components.secondaryButton.border, '2px solid #0a7d5c');
@@ -241,6 +280,9 @@ test('design: extractDesign finds the fixture tokens, inspect names the rule and
   assert.equal(tokens.logo.type, 'svg');
   assert.equal(tokens.logo.svgFile, 'logo.svg');
   assert.equal(tokens.logo.linksToStartPage, true);
+  assert.equal(tokens.logo.logoBackground, '#1fa35a');
+  assert.equal(tokens.logo.lightDrawing, true);
+  assert.equal(tokens.logo.onDarkFile, 'logo-on-dark.svg');
   assert.ok(tokens.customProperties.top.find(entry => entry.name === '--brand-primary').uses >= 3);
   assert.equal(tokens.jsonLdLogo, 'https://fixtures.test/logo.png');
   assert.ok(design.summary.length <= 5000);
@@ -258,9 +300,25 @@ test('design: extractDesign finds the fixture tokens, inspect names the rule and
   const byName = Object.fromEntries(assets.files.map(file => [file.name, file]));
   assert.match(Buffer.from(byName['stylesheet-01-design.css'].content, 'base64').toString(), /--brand-primary: #0a7d5c/);
   const svg = Buffer.from(byName['logo.svg'].content, 'base64').toString();
-  assert.doesNotMatch(svg, /<script|onclick/);
-  assert.match(svg, /<rect/);
-  assert.equal(Buffer.from(byName['logo.png'].content, 'base64').subarray(0, 8).toString('hex'), PNG_SIGNATURE);
+  assert.doesNotMatch(svg, /<script|onclick|currentColor|class=|ff0000/);
+  assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="172" height="48" viewBox="0 0 172 48"><rect width="172" height="48" rx="24" fill="#1fa35a"\/>/);
+  assert.equal((svg.match(/fill="#ffffff"/g) ?? []).length, 2, 'both shapes carry the resolved currentColor');
+  const onDark = Buffer.from(byName['logo-on-dark.svg'].content, 'base64').toString();
+  assert.doesNotMatch(onDark, /<rect|1fa35a/);
+  assert.match(onDark, /fill="#ffffff"/);
+  const png = readPng(Buffer.from(byName['logo.png'].content, 'base64'));
+  assert.equal(png.colourType, 6, 'RGBA');
+  assert.deepEqual([png.width, png.height], [344, 96]);
+  assert.equal(png.pixel(0, 0)[3], 0, 'the rounded corner is transparent');
+  assert.equal(png.pixel(png.width - 1, png.height - 1)[3], 0);
+  assert.deepEqual(png.pixel(172, 4), [0x1f, 0xa3, 0x5a, 255], 'the pill');
+  assert.deepEqual(png.pixel(64, 48), [255, 255, 255, 255], 'the drawing');
+  for (let y = 0; y < png.height; y += 2) {
+    for (let x = 0; x < png.width; x += 2) {
+      const [red, green, blue, alpha] = png.pixel(x, y);
+      assert.ok(!(alpha > 0 && Math.abs(red - 0x4a) < 12 && Math.abs(green - 0x4a) < 12 && Math.abs(blue - 0x20) < 12), `page pixel at ${x},${y}`);
+    }
+  }
   assert.ok(byName['screenshot-viewport.png']);
   assert.equal(byName['font-fixture-sans.woff2'].family, 'Fixture Sans');
   assert.ok(!assets.files.some(file => /inline/.test(file.name) && Buffer.from(file.content, 'base64').toString().includes('consent fallback')));

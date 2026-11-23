@@ -7,9 +7,13 @@ const html = body => `<!doctype html><html lang="de"><head><meta charset="utf-8"
 
 const DESIGN_CSS = `
 @font-face { font-family: "Fixture Sans"; src: url("/fonts/fixture-sans.woff2") format("woff2"); font-weight: 400; font-style: normal; }
-:root { --brand-primary: #0a7d5c; --brand-accent: #e4572e; --text: #1a1a2e; --surface: #f2f4f3; --radius: 8px; --unused-token: 3px; }
+:root { --brand-logo: #1fa35a; --brand-primary: #0a7d5c; --brand-accent: #e4572e; --text: #1a1a2e; --surface: #f2f4f3; --radius: 8px; --unused-token: 3px; }
 body { margin: 0; background: #ffffff; color: var(--text); font-family: "Fixture Sans", Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: #ffffff; border-bottom: 1px solid #d9dedc; }
+header { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: #ffffff; border-bottom: 1px solid #d9dedc; }
+.behind { position: absolute; left: 20px; top: 6px; width: 220px; height: 64px; background: #4a4a20; }
+.brand { position: relative; display: inline-block; background: var(--brand-logo); color: #ffffff; border-radius: 999px; padding: 8px 16px; line-height: 0; }
+.logo-word { fill: currentColor; }
+.logo-hidden { opacity: 0; }
 nav a { color: var(--text); font-weight: 600; text-decoration: none; margin-left: 24px; font-size: 15px; }
 nav a:hover { color: var(--brand-primary); }
 h1 { font-size: 48px; font-weight: 700; line-height: 56px; letter-spacing: -0.5px; margin: 32px; }
@@ -28,7 +32,10 @@ p { margin: 0 32px 16px; max-width: 720px; }
 .accent { color: var(--brand-accent); }
 `;
 
-const LOGO_SVG = '<svg width="160" height="40" viewBox="0 0 160 40" aria-label="Fixture Logo" class="site-logo"><script>alert(1)</script><rect width="40" height="40" rx="8" fill="#0a7d5c" onclick="alert(2)"/><text x="48" y="28" font-size="20" fill="#1a1a2e">Fixture</text></svg>';
+// a light drawing in currentColor on a pill that comes from the wrapper's CSS (background, border-radius), with a dark
+// element of the page behind it (a sibling, as a hero image behind a header): the export must show the pill and the
+// drawing, never the page around it
+const LOGO_SVG = '<svg width="140" height="32" viewBox="0 0 140 32" aria-label="Fixture Logo" class="site-logo"><script>alert(1)</script><path fill="currentColor" onclick="alert(2)" d="M0 0h32v32H0z"/><path class="logo-word" d="M40 8h100v16H40z"/><path class="logo-hidden" fill="#ff0000" d="M0 0h4v4H0z"/></svg>';
 
 /**
  * @param {{port: number, privateHost: string}} context privateHost: an address the guard must refuse that still reaches this server
@@ -45,7 +52,7 @@ const pages = ({ port, privateHost }) => ({
     '/design': () => html({
       title: 'Fixture Design',
       head: '<link rel="stylesheet" href="/design.css"><link rel="icon" href="/favicon.png"><meta property="og:image" content="/og.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Fixture","logo":"https://fixtures.test/logo.png"}</script>',
-      body: `<header><a href="/" class="logo-link">${LOGO_SVG}</a><nav aria-label="Haupt"><a href="/a">Leistungen</a><a href="/b">Über uns</a><a href="/c">Kontakt</a></nav></header>
+      body: `<header><div class="behind"></div><a href="/" class="logo-link brand">${LOGO_SVG}</a><nav aria-label="Haupt"><a href="/a">Leistungen</a><a href="/b">Über uns</a><a href="/c">Kontakt</a></nav></header>
         <main><section class="hero"><h1>Gesund unterwegs</h1><p>Text auf der Markenfarbe.</p></section>
         <div class="actions"><a class="btn-primary" href="/start">Jetzt starten</a><a class="btn-secondary" href="/more">Mehr erfahren</a><button class="btn-primary">Mitmachen</button></div>
         <h2>Unsere Angebote</h2>

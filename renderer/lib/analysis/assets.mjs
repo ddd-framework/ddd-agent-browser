@@ -3,6 +3,7 @@
 // the page's CDP session, stylesheet texts from CSS), so the export adds no requests; anything else goes through the
 // guarded fetch.
 import { collectDesignInPage } from './design-page.mjs';
+import { exportLogoInPage } from './logo-page.mjs';
 import { CssInspector, parseFontFaces } from './css.mjs';
 import { guardedFetch } from '../fetch.mjs';
 import { CONSENT_STYLE_MARKER } from '../consent.mjs';
@@ -106,21 +107,31 @@ export const exportAssets = async ({ page, cdp, mainFrameId, responseBody, kinds
       if (!logo) {
         skipped.push({ kind: 'logo', reason: 'NOT_FOUND' });
       } else {
-        if (logo.type === 'svg' && logo.svg) {
-          add(file('logo', 'logo.svg', 'image/svg+xml', pageUrl, Buffer.from(sanitizeSvg(logo.svg), 'utf8'), { sanitized: true }));
-        } else if (logo.url) {
+        // the logo as seen: drawing plus its surface (a wrapper's background and radius), PNG on a transparent canvas
+        let rasterDataUrl = null;
+        if (logo.type !== 'svg' && logo.url) {
           const fetched = await fetchBytes(logo.url);
           if (fetched.body) {
             const isSvg = /svg/.test(fetched.mimeType ?? '') || /\.svg(\?|$)/i.test(logo.url);
             const bytes = isSvg ? Buffer.from(sanitizeSvg(fetched.body.toString('utf8')), 'utf8') : fetched.body;
             const extension = isSvg ? 'svg' : (fileName('x', logo.url, 'img').match(/\.([a-z0-9]{2,5})$/i)?.[1] ?? 'img').toLowerCase();
             add(file('logo', isSvg ? 'logo.svg' : `logo-original.${extension}`, isSvg ? 'image/svg+xml' : fetched.mimeType, logo.url, bytes, isSvg ? { sanitized: true } : {}));
+            if (bytes.length <= 5_000_000) rasterDataUrl = `data:${isSvg ? 'image/svg+xml' : (fetched.mimeType || 'image/png')};base64,${bytes.toString('base64')}`;
           } else {
             skipped.push({ kind: 'logo', sourceUrl: logo.url, reason: fetched.reason ?? 'FETCH_FAILED' });
           }
         }
-        const picture = await page.locator(`css=${logo.path}`).first().screenshot({ type: 'png', omitBackground: true, timeout: 8000, animations: 'disabled' }).catch(() => null);
-        if (picture) add(file('logo', 'logo.png', 'image/png', pageUrl, picture, { rendered: true }));
+        const exported = await page.evaluate(exportLogoInPage, { path: logo.path, rasterDataUrl, scale: 2 }).catch(error => ({ error: String(error.message ?? error) }));
+        const surface = exported.background ? { background: exported.background, radius: exported.radius } : {};
+        if (exported.svg) add(file('logo', 'logo.svg', 'image/svg+xml', pageUrl, Buffer.from(sanitizeSvg(exported.svg), 'utf8'), { sanitized: true, selfContained: true, ...surface }));
+        if (exported.svgOnDark) add(file('logo', 'logo-on-dark.svg', 'image/svg+xml', pageUrl, Buffer.from(sanitizeSvg(exported.svgOnDark), 'utf8'), { sanitized: true, selfContained: true, note: 'the light drawing without its surface, for dark backgrounds' }));
+        if (exported.png) {
+          add(file('logo', 'logo.png', 'image/png', pageUrl, Buffer.from(exported.png.split(',')[1], 'base64'), { transparent: true, scale: 2, ...surface }));
+        } else {
+          // the canvas could not draw it: the element as rendered, without the page background
+          const picture = await page.locator(`css=${logo.path}`).first().screenshot({ type: 'png', omitBackground: true, timeout: 8000, animations: 'disabled' }).catch(() => null);
+          if (picture) add(file('logo', 'logo.png', 'image/png', pageUrl, picture, { rendered: true, transparent: false, note: exported.pngError ?? exported.error ?? null }));
+        }
       }
     }
 
