@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-rc.2
+
+- The Doctrine models `DBBrowserSessionModel` and `DBBrowserSessionEventModel` are now the generator's output
+  (`app:generate-doctrine-models-for-entities` in a host with the module installed); no column changed.
+- Tests: every tool builds its ddd-agents schema (`ToolDefinitions`): typed parameters, string lists as `items`,
+  nothing injected leaks, at most 900 estimated tokens per tool (today 77–268); the skill files pass the ddd-agents
+  skill-file lint.
+
 ## 0.1.0-rc.1
 
 First release: interactive browser sessions and design reading on the browser renderer.
