@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0
+
+- First regular release: content as 0.1.0-rc.4; renderer image `ghcr.io/ddd-framework/ddd-browser-renderer:0.1.0`.
+  From here on: patch for fixes, minor for features and, before 1.0, breaking changes.
+
 ## 0.1.0-rc.4
 
 - Renderer image with the logo export as the page shows it: `logo.png` is a transparent RGBA cut of the logo,
