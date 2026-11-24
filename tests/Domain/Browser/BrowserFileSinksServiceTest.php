@@ -7,6 +7,7 @@ namespace DDD\Tests\Browser\Domain\Browser;
 use DDD\Domain\AI\Entities\Browser\Files\BrowserFileSinkContext;
 use DDD\Domain\AI\Entities\Browser\Files\BrowserFileToStore;
 use DDD\Domain\AI\Services\Browser\BrowserFileSinksService;
+use DDD\Tests\Browser\Fakes\ThrowingBrowserFileSink;
 use PHPUnit\Framework\TestCase;
 
 /** The type of foreign bytes comes from the bytes; without a sink nothing is stored */
@@ -40,5 +41,21 @@ class BrowserFileSinksServiceTest extends TestCase
         $browserStoredFile = $browserFileSinksService->storeFile($browserFileToStore, new BrowserFileSinkContext());
         self::assertFalse($browserStoredFile->isStored());
         self::assertSame('no file sink is set up', $browserStoredFile->refusalReason);
+    }
+
+    public function testASinkThatThrowsRefusesTheFileInsteadOfFailing(): void
+    {
+        $browserFileSinksService = new BrowserFileSinksService();
+        $browserFileSinksService->setFileSinks([new ThrowingBrowserFileSink()]);
+        $browserFileToStore = new BrowserFileToStore();
+        $browserFileToStore->setBytes('{}');
+        $errorLogBefore = ini_set('error_log', '/dev/null');
+        try {
+            $browserStoredFile = $browserFileSinksService->storeFile($browserFileToStore, new BrowserFileSinkContext());
+        } finally {
+            ini_set('error_log', (string)$errorLogBefore);
+        }
+        self::assertFalse($browserStoredFile->isStored());
+        self::assertSame('the file could not be stored', $browserStoredFile->refusalReason);
     }
 }

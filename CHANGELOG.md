@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- A host file sink that throws no longer ends the request in a fatal error: `BrowserFileSinksService::storeFile()`
+  refuses the file ("the file could not be stored") and logs the reason (`logFileSinkFailure()`); the catch branch
+  called a logger method the service does not have.
+
 ## 0.2.0
 
 The package is renamed: `mgamadeus/ddd-browser` → **`mgamadeus/ddd-agent-browser`** (repository

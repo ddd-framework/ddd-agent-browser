@@ -7,6 +7,7 @@ namespace DDD\Domain\AI\Services\Browser;
 use DDD\Domain\AI\Entities\Browser\Files\BrowserFileSinkContext;
 use DDD\Domain\AI\Entities\Browser\Files\BrowserFileToStore;
 use DDD\Domain\AI\Entities\Browser\Files\BrowserStoredFile;
+use DDD\Infrastructure\Services\DDDService;
 use DDD\Infrastructure\Services\Service;
 use DDD\Infrastructure\Untrusted\RasterImageDecoder;
 use DDD\Infrastructure\Untrusted\UntrustedContentHeaders;
@@ -60,8 +61,19 @@ class BrowserFileSinksService extends Service
         try {
             return $browserFileSink->storeFile($browserFileToStore, $browserFileSinkContext);
         } catch (Throwable $throwable) {
-            $this->getLogger()->warning('[Browser] file sink failed', ['reason' => $throwable::class . ': ' . mb_substr($throwable->getMessage(), 0, 300)]);
+            $this->logFileSinkFailure($throwable);
             return BrowserStoredFile::refused('the file could not be stored');
+        }
+    }
+
+    /** A sink that throws refuses the file; the reason goes to the log, never to the model */
+    protected function logFileSinkFailure(Throwable $throwable): void
+    {
+        $reason = $throwable::class . ': ' . mb_substr($throwable->getMessage(), 0, 300);
+        try {
+            DDDService::instance()->getLogger()->warning('[Browser] file sink failed', ['reason' => $reason]);
+        } catch (Throwable) {
+            error_log('[Browser] file sink failed: ' . $reason);
         }
     }
 
