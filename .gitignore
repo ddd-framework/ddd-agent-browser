@@ -3,3 +3,4 @@ composer.lock
 .phpunit.result.cache
 node_modules/
 /web/dist/
+web/.test-build-*/

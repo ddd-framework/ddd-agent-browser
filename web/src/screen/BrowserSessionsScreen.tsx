@@ -23,6 +23,8 @@ import { BrowserRendererCard } from './BrowserRendererCard.tsx';
 import { BROWSER_SESSION_STATUS, type BrowserSessionStatusFilter, browserSessionTitleOf, shortBrowserUrlOf } from './format.ts';
 import type { BrowserSession, BrowserSessionStatus } from '../types.ts';
 import { useCloseBrowserSession } from './useCloseBrowserSession.tsx';
+import { BrowserConversationLink } from './BrowserConversationLink.tsx';
+import type { PageLinkComponent } from '@mgamadeus/ddd-admin-ui/primitives';
 
 export interface BrowserSessionsScreenProps {
   /** `createBrowserApi(…)` of the host. */
@@ -39,6 +41,8 @@ export interface BrowserSessionsScreenProps {
   accountId?: number;
   /** The link of a conversation in the host's agent screens; `null` = no link. */
   buildConversationHref?: (conversationId: number) => string | null;
+  /** The host's router link for the conversation link; default `AdminUiProvider.linkComponent`, else a plain `<a>`. */
+  linkComponent?: PageLinkComponent;
   /** Sessions per page (default 50, at most 200). */
   pageSize?: number;
   /** Shows the renderer check above the list (default true). */
@@ -67,6 +71,7 @@ export const BrowserSessionsScreen = ({
   conversationId,
   accountId,
   buildConversationHref,
+  linkComponent,
   pageSize = 50,
   showRenderer = true,
 }: BrowserSessionsScreenProps) => {
@@ -112,12 +117,10 @@ export const BrowserSessionsScreen = ({
       cell: session => {
         if (!session.conversationId) return <EmptyValue />;
         const href = buildConversationHref?.(session.conversationId) ?? null;
-        return href ? (
-          <a href={href} data-row-action-ignore className="font-mono text-xs underline-offset-2 hover:underline">
-            #{session.conversationId}
-          </a>
-        ) : (
-          <span className="font-mono text-xs">#{session.conversationId}</span>
+        return (
+          <span data-row-action-ignore>
+            <BrowserConversationLink conversationId={session.conversationId} href={href} linkComponent={linkComponent} />
+          </span>
         );
       },
     },

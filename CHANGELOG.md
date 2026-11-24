@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2
+
+- npm `./screen`: the conversation link of `BrowserSessionsScreen` and `BrowserSessionDetailScreen` renders with the
+  host's router link (the link component of `AdminUiProvider.linkComponent`, or the screens' new `linkComponent` prop)
+  instead of a plain `<a>`, so it opens the conversation inside the admin app without a full page load. Without a link
+  component it stays a plain link. New export `BrowserConversationLink`.
+- Host steps: none when `AdminUiProvider.linkComponent` is set; otherwise pass `linkComponent` to the screens.
+
 ## 0.4.1
 
 - The renderer's private `renderer/package.json` is named `ddd-agent-browser-renderer` and carries the release version

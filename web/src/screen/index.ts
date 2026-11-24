@@ -11,6 +11,8 @@ export {
   shortBrowserUrlOf,
 } from './format.ts';
 export type { BrowserSessionStatusFilter } from './format.ts';
+export { BrowserConversationLink } from './BrowserConversationLink.tsx';
+export type { BrowserConversationLinkProps } from './BrowserConversationLink.tsx';
 export { BrowserRendererCard } from './BrowserRendererCard.tsx';
 export type { BrowserRendererCardProps } from './BrowserRendererCard.tsx';
 export { BrowserSessionsScreen } from './BrowserSessionsScreen.tsx';

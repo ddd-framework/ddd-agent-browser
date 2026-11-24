@@ -1,6 +1,6 @@
 {
   "name": "@mgamadeus/ddd-agent-browser",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "React frontend of the agent browser for backends built with mgamadeus/ddd (Composer package mgamadeus/ddd-agent-browser): the RTK Query client of the browser admin routes and the admin screens on the blocks of @mgamadeus/ddd-admin-ui (browser sessions, session log, closing a session, renderer health).",
   "keywords": [
     "ddd",
@@ -69,6 +69,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
     "lucide-react": "^1.66.0",
     "radix-ui": "^1.8.1",
     "react": "^19.3.1",

@@ -28,7 +28,7 @@ it). Classes and tables keep the `Browser` prefix.
 | Skills | `config/app/AI/Skills/Agent/Web/Browser.md` (names the sub-skill `BrowserDesign.md`), `Pages.md` (sub-skill a host adds to its web search skill) |
 | Page reader | `Services\PageText\BrowserWebPageTextSourceService` (ddd-agents ≥ 0.3.1 `WebPageTextSource`; `AI.Browser.pageText`, default off; HTTP via `GuardedHttpFetchService` + `BrowserHtmlMarkdownService`, browser via session `navigate` / `snapshot` text / `close`; `render` auto / always / never) |
 | Admin | `Presentation\Api\Admin\Browser\BrowserSessionsControllerTrait` (hook `throwForbiddenUnlessBrowserAccessAllowed()`, DTOs in `…\Dtos\`) on `Services\BrowserSessionsAdminService`; renderer check `BrowserRendererService::checkDeployments()` → `Entities\Renderer\BrowserRendererDeploymentChecks` |
-| npm (`web/`) | `@mgamadeus/ddd-agent-browser` (same version): `createBrowserApi`, `./screen` `BrowserSessionsScreen`, `BrowserSessionDetailScreen`, `BrowserRendererCard`, `useCloseBrowserSession`; peers ddd-admin-ui ≥ 0.7.0 |
+| npm (`web/`) | `@mgamadeus/ddd-agent-browser` (same version): `createBrowserApi`, `./screen` `BrowserSessionsScreen`, `BrowserSessionDetailScreen` (conversation links through `AdminUiProvider.linkComponent` or the `linkComponent` prop), `BrowserRendererCard`, `BrowserConversationLink`, `useCloseBrowserSession`; peers ddd-admin-ui ≥ 0.7.0 |
 | Console | `app:agent-browser:check-renderer`, `app:agent-browser:purge-sessions` (aliases `app:browser:*`) |
 | Config / env | `config/app/AI/Browser/` (`AI.Browser.*`); env `AGENT_BROWSER_RENDERER_ENDPOINT`, `…_SESSION_ENDPOINT`, `…_TOKEN` |
 

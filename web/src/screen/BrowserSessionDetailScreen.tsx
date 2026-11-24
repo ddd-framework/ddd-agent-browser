@@ -20,6 +20,8 @@ import type { BrowserApi } from '../api.ts';
 import { BROWSER_SESSION_STATUS, browserEventIconOf, browserSessionTitleOf, isNotableBrowserEvent, safeBrowserHrefOf } from './format.ts';
 import type { BrowserSessionStatus } from '../types.ts';
 import { useCloseBrowserSession } from './useCloseBrowserSession.tsx';
+import { BrowserConversationLink } from './BrowserConversationLink.tsx';
+import type { PageLinkComponent } from '@mgamadeus/ddd-admin-ui/primitives';
 
 /** Log entries the detail screen asks for. */
 export const BROWSER_SESSION_EVENTS_LIMIT = 500;
@@ -69,6 +71,8 @@ export interface BrowserSessionDetailScreenProps {
   headerActions?: ReactNode;
   /** The link of a conversation in the host's agent screens; `null` = no link. */
   buildConversationHref?: (conversationId: number) => string | null;
+  /** The host's router link for the conversation link; default `AdminUiProvider.linkComponent`, else a plain `<a>`. */
+  linkComponent?: PageLinkComponent;
 }
 
 /**
@@ -76,7 +80,7 @@ export interface BrowserSessionDetailScreenProps {
  * log, oldest first (navigations, clicks, typed texts, consents, refusals, stored files, the end). An open session can
  * be closed with a reason. Every page string is shown as text; the current page opens in a new tab only as http(s).
  */
-export const BrowserSessionDetailScreen = ({ api, browserSessionId, backLink, headerActions, buildConversationHref }: BrowserSessionDetailScreenProps) => {
+export const BrowserSessionDetailScreen = ({ api, browserSessionId, backLink, headerActions, buildConversationHref, linkComponent }: BrowserSessionDetailScreenProps) => {
   const { t } = useTranslate();
   const sessionQuery = api.useBrowserSessionQuery({ browserSessionId });
   const closer = useCloseBrowserSession(api);
@@ -161,13 +165,7 @@ export const BrowserSessionDetailScreen = ({ api, browserSessionId, backLink, he
                 id: 'conversation',
                 label: t('Conversation', { context: 'browser-session' }),
                 value: session.conversationId ? (
-                  conversationHref ? (
-                    <a href={conversationHref} className="font-mono text-xs underline-offset-2 hover:underline">
-                      #{session.conversationId}
-                    </a>
-                  ) : (
-                    <span className="font-mono text-xs">#{session.conversationId}</span>
-                  )
+                  <BrowserConversationLink conversationId={session.conversationId} href={conversationHref} linkComponent={linkComponent} />
                 ) : null,
               },
               { id: 'space', label: t('Agent space', { context: 'browser-session' }), value: session.agentSpaceId ? <span className="font-mono text-xs">#{session.agentSpaceId}</span> : null },

@@ -15,6 +15,9 @@ export const browserApi = createBrowserApi({ baseApi: adminApi, apiPrefix: '/api
 - `./screen` — `BrowserSessionsScreen` (renderer check, sessions newest first with status filter and paging, close an
   open session), `BrowserSessionDetailScreen` (facts and the session log, close), `BrowserRendererCard`,
   `useCloseBrowserSession` (dialog with an optional reason for the log).
+- Conversation links (`buildConversationHref`) render with the host's router link: `AdminUiProvider.linkComponent`,
+  or a screen's own `linkComponent` prop; without either they are a plain `<a>` (full page load).
+  `BrowserConversationLink` is the same link on its own.
 - `./i18n-keys.json` — the text manifest (keys, contexts, translator hints) for the host's text export.
 
 Peers: `@mgamadeus/ddd-admin-ui` ≥ 0.7.0, `@mgamadeus/ddd-web`, `lucide-react`, React 19. The screens need
