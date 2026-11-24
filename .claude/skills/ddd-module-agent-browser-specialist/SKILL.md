@@ -1,9 +1,9 @@
 ---
 name: ddd-module-agent-browser-specialist
-description: "Builds, wires and changes mgamadeus/ddd-agent-browser: browser sessions on the renderer (navigate, snapshot refs, click, type, keys, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets), the page tool getWebPageAsScreenshot and the web research page reader (WebPageTextSource, AI.Browser.pageText: HTTP first, browser for thin pages, render auto/always/never, fetchedVia). Covers the renderer contract (healthz, routes, X-Render-Token, release tokens), check-renderer / purge-sessions, sessions and log, origin rules with owner consent, the staff gate, rights useBrowser / useWeb, the BrowserFileSink port, config AI.Browser.*, env AGENT_BROWSER_RENDERER_*, skills Agent.Web.Browser / BrowserDesign / Pages, releasing package and image. Use when installing the module, reading pages for getWebPageAsMarkdown, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED, 404 role), the contract changes, a host implements the file sink, or design tokens are needed."
+description: "Builds, wires and changes mgamadeus/ddd-agent-browser: browser sessions (navigate, snapshot refs, click, type, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets), page tool getWebPageAsScreenshot and the web research page reader (WebPageTextSource, AI.Browser.pageText: HTTP first, browser for thin pages). Covers the renderer contract (healthz, routes, tokens), check-renderer / purge-sessions, sessions and log, admin endpoints BrowserSessionsControllerTrait (sessions, log, close, renderer check) + npm screens, origin rules with owner consent, the staff gate, rights useBrowser / useWeb, the BrowserFileSink port, config AI.Browser.*, skills Agent.Web.Browser / BrowserDesign / Pages, releasing package, npm and image. Use when installing the module, mounting the browser admin screen, reading pages for getWebPageAsMarkdown, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED), the contract changes, a host implements the file sink or needs design tokens."
 metadata:
   author: mgamadeus
-  version: "0.3.0"
+  version: "0.4.0"
   framework: mgamadeus/ddd
 ---
 
@@ -27,6 +27,8 @@ it). Classes and tables keep the `Browser` prefix.
 | Tools | `Presentation\Mcp\Client\Browser\BrowserSessionMCPPackage` (`agent.web.browser`), `BrowserDesignMCPPackage` (`agent.web.browserDesign`), `BrowserPagesMCPPackage` (`agent.web.pages`, tool `getWebPageAsScreenshot` — same global name as ddd-agents' `agent.webPageScreenshot`: a host binds one) |
 | Skills | `config/app/AI/Skills/Agent/Web/Browser.md` (names the sub-skill `BrowserDesign.md`), `Pages.md` (sub-skill a host adds to its web search skill) |
 | Page reader | `Services\PageText\BrowserWebPageTextSourceService` (ddd-agents ≥ 0.3.1 `WebPageTextSource`; `AI.Browser.pageText`, default off; HTTP via `GuardedHttpFetchService` + `BrowserHtmlMarkdownService`, browser via session `navigate` / `snapshot` text / `close`; `render` auto / always / never) |
+| Admin | `Presentation\Api\Admin\Browser\BrowserSessionsControllerTrait` (hook `throwForbiddenUnlessBrowserAccessAllowed()`, DTOs in `…\Dtos\`) on `Services\BrowserSessionsAdminService`; renderer check `BrowserRendererService::checkDeployments()` → `Entities\Renderer\BrowserRendererDeploymentChecks` |
+| npm (`web/`) | `@mgamadeus/ddd-agent-browser` (same version): `createBrowserApi`, `./screen` `BrowserSessionsScreen`, `BrowserSessionDetailScreen`, `BrowserRendererCard`, `useCloseBrowserSession`; peers ddd-admin-ui ≥ 0.7.0 |
 | Console | `app:agent-browser:check-renderer`, `app:agent-browser:purge-sessions` (aliases `app:browser:*`) |
 | Config / env | `config/app/AI/Browser/` (`AI.Browser.*`); env `AGENT_BROWSER_RENDERER_ENDPOINT`, `…_SESSION_ENDPOINT`, `…_TOKEN` |
 
@@ -71,4 +73,4 @@ the staff rule (`BrowserAccessService::isInteractiveBrowsingAllowed()` same-path
 by the host or ddd-agents' `AI.accountRights`), a `BrowserFileSink`,
 skill binding by class `Agent.Web.Browser` → `BrowserSessionMCPPackage`, `Agent.Web.BrowserDesign` → `BrowserDesignMCPPackage`,
 `Agent.Web.Pages` → `BrowserPagesMCPPackage` (listed in the web search skill's `subSkillNames` instead of `Web.PageView`),
-cron `app:agent-browser:purge-sessions`, optionally `AI.Browser.pageText.enabled` (README › "Page text"). Migration from ddd-browser 0.1.x: CHANGELOG 0.2.0.
+cron `app:agent-browser:purge-sessions`, optionally the admin screen (README › "Admin": a controller using the trait, `access_control` on its path, the npm screens), optionally `AI.Browser.pageText.enabled` (README › "Page text"). Migration from ddd-browser 0.1.x: CHANGELOG 0.2.0.

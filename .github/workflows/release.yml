@@ -1,7 +1,9 @@
 name: Release
 
-# Pushing a tag vX.Y.Z (the version in composer.json) releases the module:
+# Pushing a tag vX.Y.Z (the version in composer.json and web/package.json) releases the module:
 #  - the Composer package (Packagist reads the tag from the repository);
+#  - the npm package @mgamadeus/ddd-agent-browser from web/ (trusted publishing with provenance; a version already on
+#    npm is skipped);
 #  - the browser renderer image ghcr.io/ddd-framework/ddd-agent-browser-renderer:X.Y.Z, built from renderer/ with the tag's
 #    version written into renderer/package.json first, so GET /healthz reports contractVersion = X.Y.Z. The image build
 #    runs the renderer's unit tests. The package is private (it redistributes Chrome); its visibility is set once in
@@ -15,6 +17,7 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -31,12 +34,17 @@ jobs:
       has_renderer: ${{ steps.renderer.outputs.has_renderer }}
     steps:
       - uses: actions/checkout@v4
-      - name: Tag matches the version in composer.json
+      - name: Tag matches composer.json and web/package.json
         id: version
         run: |
           VERSION=$(php -r 'echo json_decode(file_get_contents("composer.json"))->version ?? "";')
+          WEB_VERSION=$(node -p "require('./web/package.json').version")
           if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
             echo "Tag ${GITHUB_REF_NAME} does not match composer.json version ${VERSION} (expected v${VERSION})" >&2
+            exit 1
+          fi
+          if [ "${WEB_VERSION}" != "${VERSION}" ]; then
+            echo "web/package.json version ${WEB_VERSION} does not match composer.json version ${VERSION}" >&2
             exit 1
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
@@ -68,6 +76,46 @@ jobs:
           tools: composer:2.8
       - run: composer install --no-interaction --no-progress --no-scripts
       - run: vendor/bin/phpunit
+
+  npm:
+    needs: [verify, php]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+    steps:
+      - uses: actions/checkout@v4
+      # No `registry-url`: it writes an .npmrc with a placeholder token that npm would send instead of the OIDC token
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i -g corepack@latest && corepack enable
+      - name: Install npm with trusted publishing
+        run: npm install -g npm@11 && npm --version
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm i18n:check
+      - run: pnpm build
+      - name: Pack
+        run: pnpm pack --pack-destination "$RUNNER_TEMP"
+      - name: Tarball has every exports target and the documented entry split
+        run: |
+          mkdir -p "$RUNNER_TEMP/extracted"
+          tar -xzf "$(ls "$RUNNER_TEMP"/mgamadeus-ddd-agent-browser-*.tgz)" -C "$RUNNER_TEMP/extracted"
+          node scripts/check-package.mjs "$RUNNER_TEMP/extracted/package"
+      - name: Publish (trusted publishing, provenance)
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          case "$VERSION" in *-*) DIST_TAG=next ;; *) DIST_TAG=latest ;; esac
+          unset NODE_AUTH_TOKEN
+          if npm view "@mgamadeus/ddd-agent-browser@${VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+            echo "@mgamadeus/ddd-agent-browser@${VERSION} is already on npm, nothing to publish"
+            exit 0
+          fi
+          npm publish "$(ls "$RUNNER_TEMP"/mgamadeus-ddd-agent-browser-*.tgz)" --provenance --tag "$DIST_TAG" --access public --registry https://registry.npmjs.org
 
   renderer-image:
     needs: [verify, php]

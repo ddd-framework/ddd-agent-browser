@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@mgamadeus/ddd-admin-ui@0.7.1'
+  - '@mgamadeus/ddd-web@0.17.1'

@@ -13,6 +13,7 @@ One repository, two artefacts released by one tag `vX.Y.Z`:
 | Artefact | Source |
 |---|---|
 | Composer `mgamadeus/ddd-agent-browser` | `src/`, `config/`, `tests/` |
+| npm `@mgamadeus/ddd-agent-browser` | `web/`: API client and admin screens (sessions, session log, renderer check) |
 | Image `ghcr.io/ddd-framework/ddd-agent-browser-renderer:X.Y.Z` (private) | `renderer/`: real Chrome stable driven by Patchright, Xvfb |
 
 The renderer is a separate service: it has internet, but no data and no secrets except its caller tokens. The
@@ -53,6 +54,38 @@ application never renders or executes foreign content itself.
 9. A daily cron for `app:agent-browser:purge-sessions` (`AI.Browser.sessions.retentionDays`, default 90).
 10. Optional, with ddd-agents ≥ 0.3.1: the page reader of the web research (see "Page text"), switched on by
     `AI.Browser.pageText.enabled`.
+11. Optional: the admin screen (see "Admin").
+
+## Admin
+
+`DDD\Presentation\Api\Admin\Browser\BrowserSessionsControllerTrait` serves the operators' view of the browser, on
+`BrowserSessionsAdminService`. The application mounts it with one controller of its own (path prefix, tag, access) and
+restricts the path (`access_control`); the trait has no role check of its own:
+
+```php
+#[Route('/maintenance/browser')]
+#[Tag(group: 'Maintenance', name: 'BrowserSessions', description: 'The agents\' browser sessions and the renderer')]
+class AdminBrowserSessionsController extends AdminController
+{
+    use BrowserSessionsControllerTrait;
+
+    // optional: an account predicate on top of access_control
+    protected function throwForbiddenUnlessBrowserAccessAllowed(): void { /* throw new ForbiddenException(…) */ }
+}
+```
+
+| Route | |
+|---|---|
+| `GET /sessions?status&conversationId&accountId&limit&offset` | sessions, newest first (default 50, at most 200), `hasMore`, `areSessionsEnabled`, `isConfigured` |
+| `GET /sessions/{browserSessionId}` | one session (404: unknown or not readable under the row rights) |
+| `GET /sessions/{browserSessionId}/events?limit` | its log, oldest first (default 500, at most 2000) |
+| `POST /sessions/{browserSessionId}/close` (body `reason`, optional) | closes an open session: the renderer closes the context, the row ends `CLOSED`, the log entry `CLOSED` (tool `admin`) names the reason and what the renderer answered; 409 when no longer open |
+| `GET /renderer` | the check of `app:agent-browser:check-renderer` per deployment, `isHealthy`, contract versions, `areSessionsEnabled` |
+
+Every action first calls `throwForbiddenUnlessBrowserAccessAllowed()` (empty by default). Reads use the row rights of
+`DBBrowserSession` (an admin reads every session). The screens are the npm package `@mgamadeus/ddd-agent-browser`
+(same version, `web/README.md`): `createBrowserApi({ baseApi, apiPrefix: '/api/admin/maintenance/browser' })`,
+`BrowserSessionsScreen` and `BrowserSessionDetailScreen` from `./screen`.
 
 ## Page text
 

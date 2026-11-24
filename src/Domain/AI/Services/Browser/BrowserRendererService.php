@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace DDD\Domain\AI\Services\Browser;
 
 use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererDeploymentCheck;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererDeploymentChecks;
 use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererHealth;
 use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionAnswer;
 use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionRequest;
@@ -105,6 +107,63 @@ class BrowserRendererService extends Service
         $argusBrowserRendererHealth = $this->createHealthProbe();
         $argusBrowserRendererHealth->probe($baseUrl, max(2, (int)(Config::get('AI.Browser.renderer.healthTimeoutSeconds') ?? 10)));
         return $argusBrowserRendererHealth;
+    }
+
+    /**
+     * Checks every configured deployment against this package: `/healthz` answers ready, the contract version fits,
+     * and the deployment of the session routes serves sessions (role `session` or `all`). One deployment configured for
+     * both is checked once, as `stateless+sessions`. Empty when no renderer is configured.
+     * @return BrowserRendererDeploymentChecks
+     */
+    public function checkDeployments(): BrowserRendererDeploymentChecks
+    {
+        $browserRendererDeploymentChecks = new BrowserRendererDeploymentChecks();
+        $baseUrl = $this->getBaseUrl();
+        $sessionBaseUrl = $this->getSessionBaseUrl();
+        if ($baseUrl !== null && $sessionBaseUrl === $baseUrl) {
+            $browserRendererDeploymentCheck = $this->checkDeployment('stateless+sessions', $baseUrl, true);
+            $browserRendererDeploymentChecks->add($browserRendererDeploymentCheck);
+            return $browserRendererDeploymentChecks;
+        }
+        if ($baseUrl !== null) {
+            $browserRendererDeploymentCheck = $this->checkDeployment('stateless', $baseUrl, false);
+            $browserRendererDeploymentChecks->add($browserRendererDeploymentCheck);
+        }
+        if ($sessionBaseUrl !== null) {
+            $browserRendererDeploymentCheck = $this->checkDeployment('sessions', $sessionBaseUrl, true);
+            $browserRendererDeploymentChecks->add($browserRendererDeploymentCheck);
+        }
+        return $browserRendererDeploymentChecks;
+    }
+
+    /**
+     * Probes one deployment and names what does not fit this package.
+     * @param string $deploymentName
+     * @param string $baseUrl
+     * @param bool $mustServeSessions
+     * @return BrowserRendererDeploymentCheck
+     */
+    public function checkDeployment(string $deploymentName, string $baseUrl, bool $mustServeSessions): BrowserRendererDeploymentCheck
+    {
+        $browserRendererHealth = $this->probeHealth($baseUrl);
+        $problems = [];
+        if ($browserRendererHealth->httpStatusCode === null) {
+            $problems[] = 'no answer (' . ($browserRendererHealth->failureReason ?? 'unreachable') . ')';
+        } elseif (!$browserRendererHealth->isReady()) {
+            $problems[] = 'not ready (HTTP ' . $browserRendererHealth->httpStatusCode . ', status ' . ($browserRendererHealth->status ?? '?') . ')';
+        }
+        if ($browserRendererHealth->httpStatusCode !== null && !BrowserRendererContract::isCompatibleContractVersion($browserRendererHealth->contractVersion)) {
+            $problems[] = 'contract ' . ($browserRendererHealth->contractVersion ?? 'unknown') . ' does not serve this package (needs ' . BrowserRendererContract::MINIMUM_CONTRACT_VERSION . ' or newer within the major)';
+        }
+        if ($mustServeSessions && $browserRendererHealth->httpStatusCode !== null && !$browserRendererHealth->servesSessions()) {
+            $problems[] = 'role ' . ($browserRendererHealth->role ?? 'unknown') . ' answers no session routes (needs RENDER_ROLE=session or all)';
+        }
+        $browserRendererDeploymentCheck = new BrowserRendererDeploymentCheck();
+        $browserRendererDeploymentCheck->deployment = $deploymentName;
+        $browserRendererDeploymentCheck->baseUrl = $baseUrl;
+        $browserRendererDeploymentCheck->health = $browserRendererHealth;
+        $browserRendererDeploymentCheck->problems = $problems;
+        return $browserRendererDeploymentCheck;
     }
 
     /**

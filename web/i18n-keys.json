@@ -1,0 +1,530 @@
+{
+  "package": "@mgamadeus/ddd-agent-browser",
+  "version": "0.4.0",
+  "generatedBy": "scripts/build-i18n-manifest.mjs",
+  "keys": [
+    {
+      "key": "AI.Browser.sessions.enabled is false: the agents cannot open new sessions. Older sessions are still listed.",
+      "text": "AI.Browser.sessions.enabled is false: the agents cannot open new sessions. Older sessions are still listed.",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): warning text when interactive browsing is switched off; 'AI.Browser.sessions.enabled' is a config key, keep it as is."
+    },
+    {
+      "key": "Account__browser-session",
+      "text": "Account",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): column / field label: the user account a browser session ran for (shown as #id)."
+    },
+    {
+      "key": "Actions__table-column",
+      "text": "Actions",
+      "context": "table-column",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): screen-reader name of the table column holding the row buttons."
+    },
+    {
+      "key": "Agent space__browser-session",
+      "text": "Agent space",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): field label: the agent space (workspace of an AI agent) the session belongs to."
+    },
+    {
+      "key": "All__browser-session-filter",
+      "text": "All",
+      "context": "browser-session-filter",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): status filter option: show sessions in every status."
+    },
+    {
+      "key": "Browser session closed.",
+      "text": "Browser session closed.",
+      "files": [
+        "screen/useCloseBrowserSession.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): success toast after an operator closed a session."
+    },
+    {
+      "key": "Browser sessions",
+      "text": "Browser sessions",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): page title and list label."
+    },
+    {
+      "key": "Browser sessions are not set up",
+      "text": "Browser sessions are not set up",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): info callout title when no renderer is configured."
+    },
+    {
+      "key": "Check again__browser-renderer",
+      "text": "Check again",
+      "context": "browser-renderer",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): button that re-runs the renderer health check."
+    },
+    {
+      "key": "Chrome__browser-renderer",
+      "text": "Chrome",
+      "context": "browser-renderer",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): label of the Chrome browser version the renderer runs."
+    },
+    {
+      "key": "Close session__browser-action",
+      "text": "Close session",
+      "context": "browser-action",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx",
+        "screen/useCloseBrowserSession.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): button / dialog submit: ends an open browser session now."
+    },
+    {
+      "key": "Close the browser session %name%?",
+      "text": "Close the browser session %name%?",
+      "files": [
+        "screen/useCloseBrowserSession.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): confirmation dialog title; %name% is the page title or URL of the session."
+    },
+    {
+      "key": "Close the session %name%",
+      "text": "Close the session %name%",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): accessible name of the close button in a row; %name% is the page title or URL."
+    },
+    {
+      "key": "Closed__browser-session-filter",
+      "text": "Closed",
+      "context": "browser-session-filter",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): status filter option: sessions that were ended."
+    },
+    {
+      "key": "Closed__browser-session-status",
+      "text": "Closed",
+      "context": "browser-session-status",
+      "files": [
+        "screen/format.ts"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): status badge: the session was ended."
+    },
+    {
+      "key": "Closing…__browser-action",
+      "text": "Closing…",
+      "context": "browser-action",
+      "files": [
+        "screen/useCloseBrowserSession.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): button text while the close request runs."
+    },
+    {
+      "key": "Contract__browser-renderer",
+      "text": "Contract",
+      "context": "browser-renderer",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): label of the renderer's contract version (the API version between package and renderer)."
+    },
+    {
+      "key": "Conversation__browser-session",
+      "text": "Conversation",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): column / field label: the AI conversation that used the session (shown as #id)."
+    },
+    {
+      "key": "Ended by the agent, an operator or the purge__browser-session-status",
+      "text": "Ended by the agent, an operator or the purge",
+      "context": "browser-session-status",
+      "files": [
+        "screen/format.ts"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): tooltip of the Closed status: who can end a session (the purge is a cleanup job)."
+    },
+    {
+      "key": "Ended__browser-session",
+      "text": "Ended",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): field label: when the session ended."
+    },
+    {
+      "key": "Gone__browser-session-filter",
+      "text": "Gone",
+      "context": "browser-session-filter",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): status filter option: sessions the renderer lost."
+    },
+    {
+      "key": "Gone__browser-session-status",
+      "text": "Gone",
+      "context": "browser-session-status",
+      "files": [
+        "screen/format.ts"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): status badge: the renderer no longer had the session (it restarted or the session idled out)."
+    },
+    {
+      "key": "Interactive sessions are switched off",
+      "text": "Interactive sessions are switched off",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): warning callout title: agents may not open browser sessions now."
+    },
+    {
+      "key": "Interactive sessions are switched off (AI.Browser.sessions.enabled); page screenshots still use the renderer.",
+      "text": "Interactive sessions are switched off (AI.Browser.sessions.enabled); page screenshots still use the renderer.",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): note under the renderer check; the config key in brackets stays as is."
+    },
+    {
+      "key": "Last action__browser-session",
+      "text": "Last action",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): column / field label: when the agent last acted on the page."
+    },
+    {
+      "key": "Loading the browser sessions",
+      "text": "Loading the browser sessions",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): loading text of the session list."
+    },
+    {
+      "key": "Navigations__browser-session",
+      "text": "Navigations",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): column / field label: how many pages the agent opened in the session (a number)."
+    },
+    {
+      "key": "Newer__browser-pagination",
+      "text": "Newer",
+      "context": "browser-pagination",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): pagination button: the previous page of newer sessions."
+    },
+    {
+      "key": "No browser session yet: a session starts with an agent’s first navigation.",
+      "text": "No browser session yet: a session starts with an agent’s first navigation.",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): empty list text."
+    },
+    {
+      "key": "No renderer deployment for the session routes is configured in this application (AI.Browser.renderer), so there is nothing to show.",
+      "text": "No renderer deployment for the session routes is configured in this application (AI.Browser.renderer), so there is nothing to show.",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): info callout text; 'AI.Browser.renderer' is a config key, keep it as is."
+    },
+    {
+      "key": "No renderer is configured",
+      "text": "No renderer is configured",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): callout title in the renderer check when no renderer address is set."
+    },
+    {
+      "key": "No session in this status.",
+      "text": "No session in this status.",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): empty list text while a status filter is set."
+    },
+    {
+      "key": "Older__browser-pagination",
+      "text": "Older",
+      "context": "browser-pagination",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): pagination button: the next page of older sessions."
+    },
+    {
+      "key": "Open the page in a new tab",
+      "text": "Open the page in a new tab",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): accessible name of the icon link that opens the session's current page."
+    },
+    {
+      "key": "Open__browser-session-filter",
+      "text": "Open",
+      "context": "browser-session-filter",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): status filter option: sessions still open."
+    },
+    {
+      "key": "Open__browser-session-status",
+      "text": "Open",
+      "context": "browser-session-status",
+      "files": [
+        "screen/format.ts"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): status badge: the session is open and usable."
+    },
+    {
+      "key": "Package contract %version%, works with %minimum% or newer",
+      "text": "Package contract %version%, works with %minimum% or newer",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): small text next to the renderer title; %version% and %minimum% are version numbers like 0.4.0."
+    },
+    {
+      "key": "Page__browser-session",
+      "text": "Page",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): column / field label: the web page currently open in the session (URL)."
+    },
+    {
+      "key": "Reason (optional)__browser-action",
+      "text": "Reason (optional)",
+      "context": "browser-action",
+      "files": [
+        "screen/useCloseBrowserSession.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): label of the optional reason field in the close dialog; the reason is written into the session log."
+    },
+    {
+      "key": "Refresh",
+      "text": "Refresh",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): button that reloads the data."
+    },
+    {
+      "key": "Renderer__browser",
+      "text": "Renderer",
+      "context": "browser",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): card title: the headless browser service that renders pages for the agents."
+    },
+    {
+      "key": "Role__browser-renderer",
+      "text": "Role",
+      "context": "browser-renderer",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): label of the renderer deployment's role (stateless, session or all; technical values shown as is)."
+    },
+    {
+      "key": "Session log",
+      "text": "Session log",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): section title: the log of everything the agent did in the session."
+    },
+    {
+      "key": "Session status__browser-session-filter",
+      "text": "Session status",
+      "context": "browser-session-filter",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): accessible name of the status filter control."
+    },
+    {
+      "key": "Set AI.Browser.renderer (endpoint or AGENT_BROWSER_RENDERER_ENDPOINT) to give the agents a browser.",
+      "text": "Set AI.Browser.renderer (endpoint or AGENT_BROWSER_RENDERER_ENDPOINT) to give the agents a browser.",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): callout text; config key and environment variable stay as is."
+    },
+    {
+      "key": "Started__browser-session",
+      "text": "Started",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): column / field label: when the session started."
+    },
+    {
+      "key": "Status__browser-renderer",
+      "text": "Status",
+      "context": "browser-renderer",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): label of a renderer deployment's health status (e.g. ok)."
+    },
+    {
+      "key": "Status__browser-session",
+      "text": "Status",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx",
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): column / field label: the session's status (open, closed, gone)."
+    },
+    {
+      "key": "The browser session could not be closed.",
+      "text": "The browser session could not be closed.",
+      "files": [
+        "screen/useCloseBrowserSession.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): error toast when closing failed."
+    },
+    {
+      "key": "The browser session could not be loaded.",
+      "text": "The browser session could not be loaded.",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): error text when one session failed to load."
+    },
+    {
+      "key": "The browser sessions could not be loaded.",
+      "text": "The browser sessions could not be loaded.",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): error text when the list failed to load."
+    },
+    {
+      "key": "The pages the agents open in the browser renderer, one session per conversation. Titles and URLs are third-party text.",
+      "text": "The pages the agents open in the browser renderer, one session per conversation. Titles and URLs are third-party text.",
+      "files": [
+        "screen/BrowserSessionsScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): page description under the title."
+    },
+    {
+      "key": "The renderer check could not be loaded.",
+      "text": "The renderer check could not be loaded.",
+      "files": [
+        "screen/BrowserRendererCard.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): error callout title when the health check request failed."
+    },
+    {
+      "key": "The renderer closes the page now. If the agent is in the middle of a step, the step fails; its next navigation opens a new session.",
+      "text": "The renderer closes the page now. If the agent is in the middle of a step, the step fails; its next navigation opens a new session.",
+      "files": [
+        "screen/useCloseBrowserSession.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): description of the close confirmation dialog."
+    },
+    {
+      "key": "The renderer holds the browser context; the agent can act on the page__browser-session-status",
+      "text": "The renderer holds the browser context; the agent can act on the page",
+      "context": "browser-session-status",
+      "files": [
+        "screen/format.ts"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): tooltip of the Open status."
+    },
+    {
+      "key": "The renderer no longer knew the context (restart or idle time)__browser-session-status",
+      "text": "The renderer no longer knew the context (restart or idle time)",
+      "context": "browser-session-status",
+      "files": [
+        "screen/format.ts"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): tooltip of the Gone status."
+    },
+    {
+      "key": "The session log could not be loaded.",
+      "text": "The session log could not be loaded.",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): error callout title when the log failed to load."
+    },
+    {
+      "key": "The session log is empty.",
+      "text": "The session log is empty.",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): empty text of the session log."
+    },
+    {
+      "key": "This browser session was not found.",
+      "text": "This browser session was not found.",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): error callout title on the detail page for an unknown session."
+    },
+    {
+      "key": "Title__browser-session",
+      "text": "Title",
+      "context": "browser-session",
+      "files": [
+        "screen/BrowserSessionDetailScreen.tsx"
+      ],
+      "hint": "Browser admin screen (maintenance view of the browser sessions AI agents run in a headless browser renderer): field label: the title of the web page open in the session."
+    }
+  ]
+}

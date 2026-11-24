@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0
+
+- **Admin side**: the controller trait `DDD\Presentation\Api\Admin\Browser\BrowserSessionsControllerTrait` with the access hook
+  `throwForbiddenUnlessBrowserAccessAllowed()` and its DTOs (`…\Admin\Browser\Dtos\`): the sessions (newest first,
+  filter by status, conversation, account; paging with `hasMore`), one session, its log, closing an open session with
+  an optional reason, and the renderer check. Service `BrowserSessionsAdminService` (public). README › "Admin".
+- Closing by an operator: the renderer closes the context when the session holds one (an unreachable renderer ends it
+  after its idle time; the row is closed anyway), the session ends `CLOSED`, the log entry `CLOSED` with tool `admin`
+  names the reason and the renderer's answer; a session no longer open answers 409.
+- The renderer check moved into `BrowserRendererService::checkDeployments()` / `checkDeployment()` with the ObjectSet
+  `BrowserRendererDeploymentChecks` (`areAllHealthy()`); `app:agent-browser:check-renderer` uses it, its output is
+  unchanged.
+- **npm package `@mgamadeus/ddd-agent-browser`** (new, `web/`, same version as the Composer package): the RTK Query
+  client `createBrowserApi`, the payload types, `createStaticBrowserApi`, and the screens (`./screen`)
+  `BrowserSessionsScreen` (renderer card, status filter, paging, close), `BrowserSessionDetailScreen` (facts and
+  session log), `BrowserRendererCard`, `useCloseBrowserSession`; text manifest `./i18n-keys.json`. Peers
+  `@mgamadeus/ddd-admin-ui` ≥ 0.7.0 < 1, `@mgamadeus/ddd-web` ≥ 0.13.0 < 1, React 19. Released by the same tag
+  (trusted publishing).
+- No renderer change. `CONTRACT_VERSION` 0.4.0 follows the package version; 0.2.x and 0.3.x renderers stay compatible.
+- What a host does: nothing to stay as before. For the admin screen: mount the trait (README › "Admin"), restrict the
+  path, add the npm package and the screens.
+
 ## 0.3.0
 
 - **Page reader of the web research** (`DDD\Domain\AI\Services\Browser\PageText\BrowserWebPageTextSourceService`):

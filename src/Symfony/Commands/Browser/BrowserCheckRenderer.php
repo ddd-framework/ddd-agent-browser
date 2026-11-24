@@ -6,7 +6,6 @@ namespace DDD\Symfony\Commands\Browser;
 
 use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
 use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererDeploymentCheck;
-use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererHealth;
 use DDD\Domain\AI\Services\Browser\BrowserRendererService;
 use DDD\Infrastructure\Services\DDDService;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -36,22 +35,9 @@ class BrowserCheckRenderer extends Command
     {
         /** @var BrowserRendererService $browserRendererService */
         $browserRendererService = DDDService::instance()->getService(BrowserRendererService::class);
-        $deploymentChecks = [];
-        $baseUrl = $browserRendererService->getBaseUrl();
-        $sessionBaseUrl = $browserRendererService->getSessionBaseUrl();
-        if ($baseUrl !== null) {
-            $deploymentChecks[] = $this->checkDeployment('stateless', $baseUrl, $browserRendererService->probeHealth($baseUrl), false);
-        }
-        if ($sessionBaseUrl !== null && $sessionBaseUrl !== $baseUrl) {
-            $deploymentChecks[] = $this->checkDeployment('sessions', $sessionBaseUrl, $browserRendererService->probeHealth($sessionBaseUrl), true);
-        } elseif ($sessionBaseUrl !== null && $deploymentChecks !== []) {
-            // one deployment serves both: it must also serve sessions
-            $deploymentChecks[0] = $this->checkDeployment('stateless+sessions', $baseUrl, $browserRendererService->probeHealth((string)$baseUrl), true);
-        }
-        $isHealthy = $deploymentChecks !== [];
-        foreach ($deploymentChecks as $deploymentCheck) {
-            $isHealthy = $isHealthy && $deploymentCheck->problems === [];
-        }
+        $browserRendererDeploymentChecks = $browserRendererService->checkDeployments();
+        $deploymentChecks = array_values($browserRendererDeploymentChecks->getElements());
+        $isHealthy = $browserRendererDeploymentChecks->areAllHealthy();
         if ($input->getOption('format') === 'json') {
             $output->writeln((string)json_encode([
                 'packageContractVersion' => BrowserRendererContract::CONTRACT_VERSION,
@@ -85,28 +71,6 @@ class BrowserCheckRenderer extends Command
         }
         $symfonyStyle->success('The browser renderer answers with a matching contract.');
         return Command::SUCCESS;
-    }
-
-    protected function checkDeployment(string $deploymentName, string $baseUrl, BrowserRendererHealth $browserRendererHealth, bool $mustServeSessions): BrowserRendererDeploymentCheck
-    {
-        $problems = [];
-        if ($browserRendererHealth->httpStatusCode === null) {
-            $problems[] = 'no answer (' . ($browserRendererHealth->failureReason ?? 'unreachable') . ')';
-        } elseif (!$browserRendererHealth->isReady()) {
-            $problems[] = 'not ready (HTTP ' . $browserRendererHealth->httpStatusCode . ', status ' . ($browserRendererHealth->status ?? '?') . ')';
-        }
-        if ($browserRendererHealth->httpStatusCode !== null && !BrowserRendererContract::isCompatibleContractVersion($browserRendererHealth->contractVersion)) {
-            $problems[] = 'contract ' . ($browserRendererHealth->contractVersion ?? 'unknown') . ' does not serve this package (needs ' . BrowserRendererContract::MINIMUM_CONTRACT_VERSION . ' or newer within the major)';
-        }
-        if ($mustServeSessions && $browserRendererHealth->httpStatusCode !== null && !$browserRendererHealth->servesSessions()) {
-            $problems[] = 'role ' . ($browserRendererHealth->role ?? 'unknown') . ' answers no session routes (needs RENDER_ROLE=session or all)';
-        }
-        $browserRendererDeploymentCheck = new BrowserRendererDeploymentCheck();
-        $browserRendererDeploymentCheck->deployment = $deploymentName;
-        $browserRendererDeploymentCheck->baseUrl = $baseUrl;
-        $browserRendererDeploymentCheck->health = $browserRendererHealth;
-        $browserRendererDeploymentCheck->problems = $problems;
-        return $browserRendererDeploymentCheck;
     }
 
     /** The JSON row of a check (the command's output format) */
