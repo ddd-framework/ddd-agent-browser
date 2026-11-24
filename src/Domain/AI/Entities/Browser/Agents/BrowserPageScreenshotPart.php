@@ -16,7 +16,11 @@ use DDD\Domain\Base\Entities\ValueObject;
  */
 class BrowserPageScreenshotPart extends ValueObject
 {
-    /** Px height of one slice — a 1024-wide slice is scaled by its SHORT side in the vision encoder, so 2000 px stays as legible as 1200. */
+    /**
+     * Px height of one slice. A 1024 × 2000 slice stays within the image limits of both vision encoders without a
+     * downscale that blurs text: OpenAI scales by the short side, Anthropic by the long edge (at most 2576 px on
+     * current models).
+     */
     public const int SLICE_HEIGHT_PX = 2000;
 
     /** Slices per part — the default picture budget of one model call (two), so every slice of a part reaches the model. */

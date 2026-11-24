@@ -1,8 +1,8 @@
-# ddd-browser renderer
+# ddd-agent-browser renderer
 
-The browser half of `mgamadeus/ddd-browser`: it renders **public** web pages and runs browser sessions an agent
+The browser half of `mgamadeus/ddd-agent-browser`: it renders **public** web pages and runs browser sessions an agent
 drives by refs. The PHP module calls it over HTTP. The image is built from this folder and released with the package
-(`ghcr.io/ddd-framework/ddd-browser-renderer:<version>`), and its contract version is the package version.
+(`ghcr.io/ddd-framework/ddd-agent-browser-renderer:<version>`), and its contract version is the package version.
 
 - **Engine:** real Google Chrome stable, headed in Xvfb, driven by Patchright (the Playwright API without its CDP
   leaks). Camoufox (Firefox) can be tried once after a bot challenge on a screenshot. A challenge is never solved.

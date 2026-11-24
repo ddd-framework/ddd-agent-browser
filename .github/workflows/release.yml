@@ -47,6 +47,13 @@ jobs:
             echo "web/package.json version ${WEB_VERSION} does not match composer.json version ${VERSION}" >&2
             exit 1
           fi
+          if [ -f renderer/package.json ]; then
+            RENDERER_VERSION=$(node -p "require('./renderer/package.json').version")
+            if [ "${RENDERER_VERSION}" != "${VERSION}" ]; then
+              echo "renderer/package.json version ${RENDERER_VERSION} does not match composer.json version ${VERSION}" >&2
+              exit 1
+            fi
+          fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
       # the same rule as BrowserRendererContract::isCompatibleContractVersion(): the constant is the release's core
       # version (the tag may carry a pre-release suffix such as -rc.3)

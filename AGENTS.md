@@ -23,6 +23,9 @@ Both sides push to `main`: `git fetch && git rebase origin/main` before every pu
 - **The contract is one place:** README › "Renderer contract" and `BrowserRendererContract` (version constant,
   routes, reasons). A contract change lands in the renderer first, then in PHP; within a major it only grows. The
   release workflow fails when `CONTRACT_VERSION` differs from the release version.
+- **One version everywhere:** `composer.json`, `web/package.json`, `renderer/package.json` (private, name
+  `ddd-agent-browser-renderer`) and `CONTRACT_VERSION` carry the release version; the release workflow refuses a tag
+  where one differs.
 - **Untrusted input** (Core skill `ddd-untrusted-input-specialist`): every page string is third-party content (wrap it
   in untrusted marks in tool answers); images only through `RasterImageDecoder`; foreign file bytes only through the
   host's `BrowserFileSink` with the type from the bytes; no navigation to a non-public host; no code from the model

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1
+
+- The renderer's private `renderer/package.json` is named `ddd-agent-browser-renderer` and carries the release version
+  (was `ddd-browser-renderer` `0.1.0-rc.2`); the release workflow now also checks it against the tag. The renderer
+  README names the image `ghcr.io/ddd-framework/ddd-agent-browser-renderer`, which the release has built all along.
+  Renderer code unchanged, contract unchanged apart from its version.
+- `BrowserPageScreenshotPart::SLICE_HEIGHT_PX`: the comment names both scaling rules (OpenAI by the short side,
+  Anthropic by the long edge); 2000 px fits both.
+- Host steps: none.
+
 ## 0.4.0
 
 - **Admin side**: the controller trait `DDD\Presentation\Api\Admin\Browser\BrowserSessionsControllerTrait` with the access hook
