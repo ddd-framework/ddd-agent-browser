@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace DDD\Tests\Browser\Fakes;
 
 use DDD\Domain\AI\Services\Conversations\Agent\OwnerConsentsService;
-use DDD\Domain\Browser\Services\Agents\BrowserAgentSessionsService;
-use DDD\Domain\Browser\Services\BrowserOriginRulesService;
-use DDD\Domain\Browser\Services\BrowserRendererService;
-use DDD\Domain\Browser\Services\BrowserSessionsService;
+use DDD\Domain\AI\Services\Browser\Agents\BrowserAgentSessionsService;
+use DDD\Domain\AI\Services\Browser\BrowserOriginRulesService;
+use DDD\Domain\AI\Services\Browser\BrowserRendererService;
+use DDD\Domain\AI\Services\Browser\BrowserSessionsService;
 
 /** The agent sessions service wired to fakes */
 class WiredBrowserAgentSessionsService extends BrowserAgentSessionsService

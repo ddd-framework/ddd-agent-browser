@@ -1,13 +1,13 @@
 {
-    "name": "mgamadeus/ddd-browser",
+    "name": "mgamadeus/ddd-agent-browser",
     "description": "Browser sessions and website analysis for mgamadeus/ddd: agent-controllable browsing, screenshots, rendered page to markdown, design extraction, on-site SEO, performance and tech audits",
     "type": "library",
     "license": "MIT",
-    "homepage": "https://github.com/ddd-framework/ddd-browser",
-    "version": "0.1.0",
+    "homepage": "https://github.com/ddd-framework/ddd-agent-browser",
+    "version": "0.2.0",
     "support": {
-        "issues": "https://github.com/ddd-framework/ddd-browser/issues",
-        "source": "https://github.com/ddd-framework/ddd-browser"
+        "issues": "https://github.com/ddd-framework/ddd-agent-browser/issues",
+        "source": "https://github.com/ddd-framework/ddd-agent-browser"
     },
     "minimum-stability": "stable",
     "authors": [
@@ -36,7 +36,7 @@
         "mgamadeus/ddd-agents": "^0.1.37"
     },
     "suggest": {
-        "mgamadeus/ddd-agents": "^0.1.37 — adds the browser session and design tools and skills for agents (owner consent for submissions and unknown URLs)",
+        "mgamadeus/ddd-agents": "^0.1.37 — adds the browser session, design and page tools and skills for agents (owner consent for submissions and unknown URLs)",
         "mgamadeus/ddd-site-insights": "Shows the on-site findings of a page next to its Search Console data"
     },
     "autoload": {
@@ -50,7 +50,7 @@
         }
     },
     "extra": {
-        "ddd-module": "DDD\\Modules\\Browser\\BrowserModule"
+        "ddd-module": "DDD\\Modules\\AgentBrowser\\AgentBrowserModule"
     },
     "config": {
         "allow-plugins": {

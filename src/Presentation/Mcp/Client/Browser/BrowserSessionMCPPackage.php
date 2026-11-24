@@ -13,15 +13,15 @@ use DDD\Domain\AI\Entities\MCPPackages\MCPToolFetchesModelChosenUrl;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolRefreshesState;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolReturnsUntrustedContent;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolSummary;
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererContract;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSession;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionAnswer;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionRequest;
-use DDD\Domain\Browser\Services\Agents\BrowserAgentAnswersService;
-use DDD\Domain\Browser\Services\Agents\BrowserAgentSessionsService;
-use DDD\Domain\Browser\Services\BrowserAccessService;
-use DDD\Domain\Browser\Services\BrowserRendererService;
-use DDD\Domain\Browser\Services\BrowserSessionsService;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSession;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionAnswer;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionRequest;
+use DDD\Domain\AI\Services\Browser\Agents\BrowserAgentAnswersService;
+use DDD\Domain\AI\Services\Browser\Agents\BrowserAgentSessionsService;
+use DDD\Domain\AI\Services\Browser\BrowserAccessService;
+use DDD\Domain\AI\Services\Browser\BrowserRendererService;
+use DDD\Domain\AI\Services\Browser\BrowserSessionsService;
 use DDD\Infrastructure\Exceptions\BadRequestException;
 use DDD\Infrastructure\Services\DDDService;
 use DDD\Presentation\Mcp\Client\Browser\Dtos\BrowserClickRequestDto;
@@ -45,7 +45,7 @@ use DDD\Presentation\Mcp\Dtos\MCPToolResponse;
  */
 class BrowserSessionMCPPackage extends MCPPackage
 {
-    public static ?string $name = 'browser.session';
+    public static ?string $name = 'agent.web.browser';
 
     public static ?string $description = 'Drive a real browser for staff: browserNavigate, browserSnapshot (outline, interactive refs, text), browserClick, browserType, browserSelectOption, browserPressKey, browserScroll, browserScreenshot, browserTabs, browserClose.';
 

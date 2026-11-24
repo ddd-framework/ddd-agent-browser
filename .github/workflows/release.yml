@@ -2,7 +2,7 @@ name: Release
 
 # Pushing a tag vX.Y.Z (the version in composer.json) releases the module:
 #  - the Composer package (Packagist reads the tag from the repository);
-#  - the browser renderer image ghcr.io/ddd-framework/ddd-browser-renderer:X.Y.Z, built from renderer/ with the tag's
+#  - the browser renderer image ghcr.io/ddd-framework/ddd-agent-browser-renderer:X.Y.Z, built from renderer/ with the tag's
 #    version written into renderer/package.json first, so GET /healthz reports contractVersion = X.Y.Z. The image build
 #    runs the renderer's unit tests. The package is private (it redistributes Chrome); its visibility is set once in
 #    the organisation's package settings.
@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: ghcr.io/ddd-framework/ddd-browser-renderer
+  IMAGE: ghcr.io/ddd-framework/ddd-agent-browser-renderer
 
 jobs:
   verify:
@@ -44,7 +44,7 @@ jobs:
       # version (the tag may carry a pre-release suffix such as -rc.3)
       - name: Contract constant matches the version
         run: |
-          CONTRACT=$(grep -oE "CONTRACT_VERSION = '[^']+'" src/Domain/Browser/Entities/Renderer/BrowserRendererContract.php | head -1 | sed -E "s/.*'([^']+)'/\1/")
+          CONTRACT=$(grep -oE "CONTRACT_VERSION = '[^']+'" src/Domain/AI/Entities/Browser/Renderer/BrowserRendererContract.php | head -1 | sed -E "s/.*'([^']+)'/\1/")
           CORE_VERSION=$(echo "${{ steps.version.outputs.version }}" | sed -E 's/[-+].*$//')
           if [ "${CONTRACT}" != "${CORE_VERSION}" ]; then
             echo "BrowserRendererContract::CONTRACT_VERSION ${CONTRACT} does not match the release ${CORE_VERSION}" >&2

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace DDD\Tests\Browser\Domain\Browser;
 
-use DDD\Domain\Browser\Entities\Files\BrowserFileSinkContext;
-use DDD\Domain\Browser\Entities\Files\BrowserFileToStore;
-use DDD\Domain\Browser\Services\BrowserFileSinksService;
+use DDD\Domain\AI\Entities\Browser\Files\BrowserFileSinkContext;
+use DDD\Domain\AI\Entities\Browser\Files\BrowserFileToStore;
+use DDD\Domain\AI\Services\Browser\BrowserFileSinksService;
 use PHPUnit\Framework\TestCase;
 
 /** The type of foreign bytes comes from the bytes; without a sink nothing is stored */

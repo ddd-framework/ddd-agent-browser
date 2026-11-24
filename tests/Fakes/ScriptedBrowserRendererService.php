@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace DDD\Tests\Browser\Fakes;
 
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionAnswer;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionRequest;
-use DDD\Domain\Browser\Services\BrowserRendererService;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionAnswer;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionRequest;
+use DDD\Domain\AI\Services\Browser\BrowserRendererService;
 
 /** A renderer that answers from a script and records every request */
 class ScriptedBrowserRendererService extends BrowserRendererService

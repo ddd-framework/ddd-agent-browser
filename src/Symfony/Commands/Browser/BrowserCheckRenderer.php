@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace DDD\Symfony\Commands\Browser;
 
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererContract;
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererDeploymentCheck;
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererHealth;
-use DDD\Domain\Browser\Services\BrowserRendererService;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererDeploymentCheck;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererHealth;
+use DDD\Domain\AI\Services\Browser\BrowserRendererService;
 use DDD\Infrastructure\Services\DDDService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,8 +21,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * package works with, and the sessions deployment runs in role `session` or `all`. Exit 1 on any problem.
  */
 #[AsCommand(
-    name: 'app:browser:check-renderer',
-    description: 'Checks the browser renderer deployments: /healthz answers, the contract version matches this package (BrowserRendererContract), the sessions deployment serves sessions. Exit 1 on a problem'
+    name: 'app:agent-browser:check-renderer',
+    description: 'Checks the browser renderer deployments: /healthz answers, the contract version matches this package (BrowserRendererContract), the sessions deployment serves sessions. Exit 1 on a problem',
+    aliases: ['app:browser:check-renderer']
 )]
 class BrowserCheckRenderer extends Command
 {
@@ -62,7 +63,7 @@ class BrowserCheckRenderer extends Command
         }
         $symfonyStyle = new SymfonyStyle($input, $output);
         if ($deploymentChecks === []) {
-            $symfonyStyle->error('No browser renderer is configured (Browser.renderer: endpoint / endpointEnv).');
+            $symfonyStyle->error('No browser renderer is configured (AI.Browser.renderer: endpoint / endpointEnv).');
             return Command::FAILURE;
         }
         $tableRows = [];

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DDD\Tests\Browser\Domain\Browser;
 
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererContract;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionRequest;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionRequest;
 use PHPUnit\Framework\TestCase;
 
 /** The contract version check and the bodies of the session routes */

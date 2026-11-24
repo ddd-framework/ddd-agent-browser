@@ -12,14 +12,14 @@ use DDD\Domain\AI\Entities\MCPPackages\MCPToolExecutionTimeout;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolRefreshesState;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolReturnsUntrustedContent;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolSummary;
-use DDD\Domain\Browser\Entities\Files\BrowserFileToStore;
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererContract;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionEvent;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionRequest;
-use DDD\Domain\Browser\Services\Agents\BrowserAgentAnswersService;
-use DDD\Domain\Browser\Services\Agents\BrowserAgentSessionsService;
-use DDD\Domain\Browser\Services\BrowserFileSinksService;
-use DDD\Domain\Browser\Services\BrowserSessionsService;
+use DDD\Domain\AI\Entities\Browser\Files\BrowserFileToStore;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionEvent;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionRequest;
+use DDD\Domain\AI\Services\Browser\Agents\BrowserAgentAnswersService;
+use DDD\Domain\AI\Services\Browser\Agents\BrowserAgentSessionsService;
+use DDD\Domain\AI\Services\Browser\BrowserFileSinksService;
+use DDD\Domain\AI\Services\Browser\BrowserSessionsService;
 use DDD\Infrastructure\Exceptions\BadRequestException;
 use DDD\Infrastructure\Libs\Config;
 use DDD\Presentation\Mcp\Client\Browser\Dtos\BrowserExportAssetsRequestDto;
@@ -35,7 +35,7 @@ use DDD\Presentation\Mcp\Client\Browser\Dtos\BrowserMcpResponseDto;
  */
 class BrowserDesignMCPPackage extends MCPPackage
 {
-    public static ?string $name = 'browser.design';
+    public static ?string $name = 'agent.web.browserDesign';
 
     public static ?string $description = 'Design of the browser session\'s page: browserExtractDesign (colours, fonts, scales, components, logo; design-tokens.json), browserInspect (computed styles and their CSS rules), browserExportAssets (stylesheets, logo, screenshots, fonts into the workspace).';
 
@@ -193,8 +193,8 @@ class BrowserDesignMCPPackage extends MCPPackage
         if ($refusalText !== null) {
             throw new BadRequestException($refusalText);
         }
-        $maxAssets = max(1, (int)(Config::get('Browser.files.maxAssetsPerExport') ?? 20));
-        $maxFileBytes = max(1, (int)(Config::get('Browser.files.maxFileBytes') ?? 26214400));
+        $maxAssets = max(1, (int)(Config::get('AI.Browser.files.maxAssetsPerExport') ?? 20));
+        $maxFileBytes = max(1, (int)(Config::get('AI.Browser.files.maxFileBytes') ?? 26214400));
         $fileSinkContext = $browserAgentSessionsService->buildFileSinkContext($callProvenance, __FUNCTION__);
         $lines = [];
         $storedCount = 0;

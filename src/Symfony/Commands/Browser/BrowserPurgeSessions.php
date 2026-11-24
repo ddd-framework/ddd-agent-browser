@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DDD\Symfony\Commands\Browser;
 
-use DDD\Domain\Browser\Services\BrowserSessionsService;
+use DDD\Domain\AI\Services\Browser\BrowserSessionsService;
 use DDD\Infrastructure\Services\DDDService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -13,8 +13,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-/** Deletes browser sessions and their log after `Browser.sessions.retentionDays` (a daily cron; 500 per run). */
-#[AsCommand(name: 'app:browser:purge-sessions', description: 'Deletes browser sessions and their log older than Browser.sessions.retentionDays (500 per run; --dryRun counts)')]
+/** Deletes browser sessions and their log after `AI.Browser.sessions.retentionDays` (a daily cron; 500 per run). */
+#[AsCommand(name: 'app:agent-browser:purge-sessions',
+    aliases: ['app:browser:purge-sessions'], description: 'Deletes browser sessions and their log older than AI.Browser.sessions.retentionDays (500 per run; --dryRun counts)')]
 class BrowserPurgeSessions extends Command
 {
     protected function configure(): void

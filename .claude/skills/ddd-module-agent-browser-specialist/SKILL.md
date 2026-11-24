@@ -1,0 +1,71 @@
+---
+name: ddd-module-agent-browser-specialist
+description: "Builds, wires and changes mgamadeus/ddd-agent-browser (formerly ddd-browser): browser sessions on the renderer (navigate, snapshot refs, click, type, select, keys, scroll, screenshot, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets) and the page tool getWebPageAsScreenshot (stateless route). Covers the renderer contract (healthz version and role, routes, X-Render-Token, 429, CONSENT_REQUIRED release tokens), app:agent-browser:check-renderer / purge-sessions, sessions and log, origin rules with owner consent, the staff gate, the BrowserFileSink port, config AI.Browser.*, env AGENT_BROWSER_RENDERER_*, skills Agent.Web.Browser / BrowserDesign / Pages and their ids, releasing package and image. Use when installing the module, migrating from ddd-browser, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED, 404 role), the contract changes, a host implements the file sink, or design tokens are needed."
+metadata:
+  author: mgamadeus
+  version: "0.2.0"
+  framework: mgamadeus/ddd
+---
+
+# ddd-agent-browser
+
+PHP lives in the AI domain: `DDD\Domain\AI\{Entities,Services,Repo}\Browser\…` (short names below are relative to
+it). Classes and tables keep the `Browser` prefix.
+
+## Pieces
+
+| Piece | Class / file |
+|---|---|
+| Module | `DDD\Modules\AgentBrowser\AgentBrowserModule` (agent part — `Entities\Browser\Agents`, `Services\Browser\Agents`, `Presentation\Mcp\Client\Browser` — only beside ddd-agents) |
+| Contract | `Entities\Renderer\BrowserRendererContract` + README › "Renderer contract" |
+| Renderer calls | `Services\BrowserRendererService` → `Repo\Argus\Sessions\ArgusBrowserSessionAnswer`, `Repo\Argus\Renderer\ArgusBrowserRendererHealth`, `Repo\Argus\Pages\ArgusBrowserPageScreenshot` (stateless route) |
+| Session request / answer | `Entities\Sessions\BrowserSessionRequest`, `BrowserSessionAnswer` (+ `Answers\*`) |
+| Sessions and log | `BrowserSession`, `BrowserSessionEvent` (tables `BrowserSessions`, `BrowserSessionEvents`), `Services\BrowserSessionsService` |
+| Rules | `Services\BrowserOriginRulesService` (URL / text origin), `Services\BrowserAccessService` (staff gate, limits) |
+| Files | `Services\BrowserFileSink` (host port, tag `browser.file_sink`), `Services\BrowserFileSinksService` |
+| Agent side | `Services\Agents\BrowserAgentSessionsService` (consent, submission release, log), `BrowserAgentAnswersService` (texts, refusals, screenshot parts), `BrowserAgentPagesService` (page tools: capture, parts, tall-window retry, host refusal) with `Entities\Browser\Pages\BrowserPageScreenshot` and `Entities\Browser\Agents\BrowserPageScreenshotPart` |
+| Tools | `Presentation\Mcp\Client\Browser\BrowserSessionMCPPackage` (`agent.web.browser`), `BrowserDesignMCPPackage` (`agent.web.browserDesign`), `BrowserPagesMCPPackage` (`agent.web.pages`, tool `getWebPageAsScreenshot` — same global name as ddd-agents' `agent.webPageScreenshot`: a host binds one) |
+| Skills | `config/app/AI/Skills/Agent/Web/Browser.md` (names the sub-skill `BrowserDesign.md`), `Pages.md` (sub-skill a host adds to its web search skill) |
+| Console | `app:agent-browser:check-renderer`, `app:agent-browser:purge-sessions` (aliases `app:browser:*`) |
+| Config / env | `config/app/AI/Browser/` (`AI.Browser.*`); env `AGENT_BROWSER_RENDERER_ENDPOINT`, `…_SESSION_ENDPOINT`, `…_TOKEN` |
+
+## Rules
+
+1. The contract lives in one place (README + `BrowserRendererContract`). The renderer side (`renderer/`) is owned
+   separately: change PHP to match, never edit `renderer/` from the PHP side. Renderer first, PHP second.
+2. A navigation target that is not a public http(s) host is answered `BLOCKED` before any call.
+3. A model-written URL runs only from an operator message, a named host's bare start page, or a result that showed it
+   in full; a typed text only from an operator message. Otherwise `OwnerConsentsService::requireOwnerConsentForStep()`
+   asks (refused without an operator).
+4. `CONSENT_REQUIRED` from `act`: reserve consent bound to method + target + field values (never the token); not
+   reserved → `OwnerConsentMissingException` naming target and values; reserved → repeat once with `releaseToken`,
+   then `markConsentUsed()`.
+5. Every page string in an answer is wrapped (`ToolResultUntrustedSegments`); answers stay ≤ `maxAnswerCharacters`.
+6. Screenshots: only PNG/JPEG via `RasterImageDecoder`, cut by `PhotoUtils::sliceImageVertically()` into 2,000 px
+   pictures (a part is 4,000 px).
+7. Asset bytes: type via `BrowserFileSinksService::detectContentType()` (never the claimed type), name via
+   `sanitizeFileName()`, stored only through the host's sink.
+
+## Refusals the model reads
+
+| Reason | Next move |
+|---|---|
+| `SESSION_GONE` | navigate again (browserNavigate retries once with a fresh session itself) |
+| `STALE_REF` | new snapshot (interactive) |
+| `FIELD_REFUSED` | password / payment field: stop, say so |
+| `BLOCKED`, `BOT_CHALLENGE` | no retry, one attempt per site |
+| HTTP 429 | `BUSY`: wait `Retry-After` |
+| HTTP 404 | the renderer has no session role: operator |
+| `CONSENT_REQUIRED` with only `kind: dropped` | gone for good, no release: say so, ask nobody |
+| any other reason | `BrowserAgentAnswersService::buildRefusalText()` has one sentence per reason |
+
+Refs: `e12` or `f3e12` (`BrowserRendererContract::REF_PATTERN`). Files of a site go to `web/<domain>` under the
+renderer's names (design-tokens.json next to logo.svg / logo.png). PHP waits 65 s per action; tool ceilings 80 / 140 s.
+
+## Host checklist
+
+Endpoints + token env (`AI.Browser.renderer`), `app:agent-browser:check-renderer` in the deploy, the two tables, `AI.Browser.sessions.enabled`,
+the staff rule (`BrowserAccessService::isInteractiveBrowsingAllowed()` same-path override), a `BrowserFileSink`,
+skill binding by class `Agent.Web.Browser` → `BrowserSessionMCPPackage`, `Agent.Web.BrowserDesign` → `BrowserDesignMCPPackage`,
+`Agent.Web.Pages` → `BrowserPagesMCPPackage` (listed in the web search skill's `subSkillNames` instead of `Web.PageView`),
+cron `app:agent-browser:purge-sessions`. Migration from ddd-browser 0.1.x: CHANGELOG 0.2.0.

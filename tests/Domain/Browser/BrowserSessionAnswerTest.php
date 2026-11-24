@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace DDD\Tests\Browser\Domain\Browser;
 
 use DDD\Domain\Base\Repo\Argus\Utils\ArgusApiOperation;
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererContract;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionAnswer;
-use DDD\Domain\Browser\Repo\Argus\Sessions\ArgusBrowserSessionAnswer;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionAnswer;
+use DDD\Domain\AI\Repo\Argus\Browser\Sessions\ArgusBrowserSessionAnswer;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 

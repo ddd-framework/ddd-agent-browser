@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace DDD\Tests\Browser\Domain\Browser;
 
-use DDD\Domain\Browser\Entities\Renderer\BrowserRendererContract;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSession;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionAnswer;
-use DDD\Domain\Browser\Entities\Sessions\BrowserSessionRequest;
-use DDD\Domain\Browser\Services\Agents\BrowserAgentAnswersService;
-use DDD\Domain\Browser\Services\BrowserFileSinksService;
+use DDD\Domain\AI\Entities\Browser\Renderer\BrowserRendererContract;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSession;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionAnswer;
+use DDD\Domain\AI\Entities\Browser\Sessions\BrowserSessionRequest;
+use DDD\Domain\AI\Services\Browser\Agents\BrowserAgentAnswersService;
+use DDD\Domain\AI\Services\Browser\BrowserFileSinksService;
 use DDD\Infrastructure\Exceptions\BadRequestException;
 use DDD\Presentation\Mcp\Client\Browser\BrowserSessionMCPPackage;
 use DDD\Tests\Browser\Fakes\WiredBrowserAgentSessionsService;

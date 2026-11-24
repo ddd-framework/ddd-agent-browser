@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.2.0
+
+The package is renamed: `mgamadeus/ddd-browser` → **`mgamadeus/ddd-agent-browser`** (repository
+`ddd-framework/ddd-agent-browser`; GitHub redirects the old URL). Breaking: names, namespaces, config path, env names,
+skill names and package ids change. Tables and class names keep `Browser*`; stored rows need no change.
+
+- **Page tools** (`Agent.Web.Pages`, package `agent.web.pages`, `BrowserPagesMCPPackage`): `getWebPageAsScreenshot`
+  moved here from ddd-agents (`Web.PageView`), now on the renderer's stateless route `POST /webPageRenderer/screenshot`
+  (`ArgusBrowserPageScreenshot`, `BrowserAgentPagesService`, `BrowserPageScreenshot`, `BrowserPageScreenshotPart`).
+  Same behaviour: parts of 4,000 px as two pictures, the tall-window retry for pages that block scrolling, the
+  describe-before-next-part refusal, ten minutes of memory cache per URL and viewport, non-public hosts refused before
+  the call. New config `AI.Browser.renderer.screenshotTimeoutSeconds` (40). Available while a stateless endpoint is
+  configured; no session, consent or staff account needed. The tool keeps its global name: a host binds either this
+  package or ddd-agents' `agent.webPageScreenshot`, never both (ddd-agents removes its own in 0.3.0). No Composer
+  `conflict` is declared: the module is meant to run beside ddd-agents 0.1.x.
+- Module class `DDD\Modules\AgentBrowser\AgentBrowserModule` (was `DDD\Modules\Browser\BrowserModule`).
+- PHP in the AI domain: `DDD\Domain\Browser\{Entities,Services,Repo}\…` → `DDD\Domain\AI\{Entities,Services,Repo}\Browser\…`
+  (e.g. `DDD\Domain\AI\Services\Browser\BrowserFileSink`, `…\Services\Browser\BrowserAccessService`,
+  `…\Services\Browser\Agents\BrowserAgentSessionsService`). The `DB*Model` files are regenerated.
+- Config `config/app/Browser/` → `config/app/AI/Browser/` (keys `Browser.*` → `AI.Browser.*`).
+- Env `BROWSER_RENDERER_ENDPOINT`, `BROWSER_RENDERER_SESSION_ENDPOINT`, `BROWSER_RENDERER_TOKEN` →
+  `AGENT_BROWSER_RENDERER_ENDPOINT`, `AGENT_BROWSER_RENDERER_SESSION_ENDPOINT`, `AGENT_BROWSER_RENDERER_TOKEN` (read in
+  `config/app/AI/Browser/renderer.php`; a host keeps the old names by overriding the `*Env` keys in its copy).
+- Skills `Browser.Session` → `Agent.Web.Browser` (names `Agent.Web.BrowserDesign` as its sub-skill), `Browser.Design` →
+  `Agent.Web.BrowserDesign` (a sub-skill now), new `Agent.Web.Pages` (a sub-skill a host lists in its web search
+  skill). Files in `config/app/AI/Skills/Agent/Web/`. Package ids `browser.session` → `agent.web.browser`,
+  `browser.design` → `agent.web.browserDesign`, new `agent.web.pages`; bind by class.
+- Console `app:agent-browser:check-renderer`, `app:agent-browser:purge-sessions`; the former `app:browser:*` names stay as
+  aliases.
+- Renderer image `ghcr.io/ddd-framework/ddd-agent-browser-renderer:<version>` (was `ddd-browser-renderer`); renderer code
+  unchanged. `BrowserRendererContract::CONTRACT_VERSION` 0.2.0 (minimum stays 0.1.0: a 0.1.0 renderer serves this
+  release).
+
+**Host migration:**
+
+1. Composer: replace `mgamadeus/ddd-browser` with `mgamadeus/ddd-agent-browser` `^0.2.0`.
+2. Move `config/app/Browser/*` to `config/app/AI/Browser/` and every `Config::get('Browser.…')` to `AI.Browser.…`.
+3. Rename the env variables (or keep the old ones through the `*Env` keys of the host's `renderer.php`).
+4. Replace `DDD\Domain\Browser\…` imports and same-path subclasses (e.g. of `BrowserAccessService`, a
+   `BrowserFileSink`, MCP package subclasses) by their `DDD\Domain\AI\…\Browser\…` paths; `services.yaml` entries likewise.
+5. `skillPackages.php`: `'Agent.Web.Browser' => [BrowserSessionMCPPackage::class]`,
+   `'Agent.Web.BrowserDesign' => [BrowserDesignMCPPackage::class]`, `'Agent.Web.Pages' => [BrowserPagesMCPPackage::class]`;
+   in the web search skill's `subSkillNames` replace `Web.PageView` by `Agent.Web.Pages` and drop its binding;
+   `skillRequirements.php` and evaluation files use the new skill names.
+6. Crons and deploy hooks may keep `app:browser:*` (aliases); new entries use `app:agent-browser:*`.
+7. Regenerate the Doctrine models (`app:generate-doctrine-models-for-entities`, run by composer's `post-update-cmd`).
+8. Renderer deployments: switch to the image `ghcr.io/ddd-framework/ddd-agent-browser-renderer:0.2.0` (the old image
+   keeps working with this release).
+
 ## 0.1.0
 
 - First regular release: content as 0.1.0-rc.4; renderer image `ghcr.io/ddd-framework/ddd-browser-renderer:0.1.0`.

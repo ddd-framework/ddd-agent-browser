@@ -9,6 +9,7 @@ use DDD\Domain\AI\Entities\MCPPackages\MCPToolEffect;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolReturnsUntrustedContent;
 use DDD\Domain\AI\Entities\MCPPackages\ToolDefinitions;
 use DDD\Presentation\Mcp\Client\Browser\BrowserDesignMCPPackage;
+use DDD\Presentation\Mcp\Client\Browser\BrowserPagesMCPPackage;
 use DDD\Presentation\Mcp\Client\Browser\BrowserSessionMCPPackage;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -23,12 +24,12 @@ class BrowserToolSchemasTest extends TestCase
     protected const int MAX_SCHEMA_TOKENS = 900;
 
     /** @var string[] The packages of the module */
-    protected const array PACKAGE_CLASSES = [BrowserSessionMCPPackage::class, BrowserDesignMCPPackage::class];
+    protected const array PACKAGE_CLASSES = [BrowserSessionMCPPackage::class, BrowserDesignMCPPackage::class, BrowserPagesMCPPackage::class];
 
     public function testEveryToolBuildsAValidCompactSchema(): void
     {
         $toolNames = $this->findToolNames();
-        self::assertCount(13, $toolNames);
+        self::assertCount(14, $toolNames);
         $toolDefinitions = ToolDefinitions::forPackages(static::PACKAGE_CLASSES);
         foreach ($toolNames as $toolName) {
             $toolDefinition = $toolDefinitions->getByName($toolName);
@@ -38,7 +39,7 @@ class BrowserToolSchemasTest extends TestCase
             self::assertSame($toolName, $wireSchema['function']['name']);
             self::assertSame('object', $wireSchema['function']['parameters']['type'] ?? null, $toolName);
             $properties = (array)($wireSchema['function']['parameters']['properties'] ?? []);
-            foreach (['agentToolCallProvenance', 'callProvenance', 'browserAgentSessionsService', 'browserAgentAnswersService'] as $hiddenName) {
+            foreach (['agentToolCallProvenance', 'callProvenance', 'browserAgentSessionsService', 'browserAgentAnswersService', 'browserAgentPagesService'] as $hiddenName) {
                 self::assertArrayNotHasKey($hiddenName, $properties, $toolName . ' leaks ' . $hiddenName);
             }
             self::assertStringNotContainsString('array<', $schemaJson, $toolName . ' carries generic array syntax');

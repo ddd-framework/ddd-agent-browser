@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DDD\Tests\Browser\Domain\Browser;
 
-use DDD\Domain\Browser\Entities\Origins\BrowserOriginTexts;
-use DDD\Domain\Browser\Services\BrowserOriginRulesService;
+use DDD\Domain\AI\Entities\Browser\Origins\BrowserOriginTexts;
+use DDD\Domain\AI\Services\Browser\BrowserOriginRulesService;
 use PHPUnit\Framework\TestCase;
 
 /** Which model-written URLs and texts run without the operator's yes */

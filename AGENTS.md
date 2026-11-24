@@ -1,17 +1,18 @@
-# mgamadeus/ddd-browser
+# mgamadeus/ddd-agent-browser
 
-Browser sessions and website analysis for mgamadeus/ddd. Namespace `DDD\` (`src/`), module class
-`DDD\Modules\Browser\BrowserModule`. Skill: `.claude/skills/ddd-module-browser-specialist` — load it before changing
+Browser sessions, page tools and website analysis for mgamadeus/ddd (formerly `mgamadeus/ddd-browser`). Namespace
+`DDD\` (`src/`), PHP in the AI domain, module class `DDD\Modules\AgentBrowser\AgentBrowserModule`. Skill:
+`.claude/skills/ddd-module-agent-browser-specialist` — load it before changing
 the module.
 
 ## Layout
 
 | Path | Owner | Content |
 |---|---|---|
-| `src/Domain/Browser/` | PHP | sessions (entities, DB repos), renderer contract and Argus repos, services, file sink port |
-| `src/Domain/Browser/Services/Agents/`, `src/Presentation/Mcp/Client/Browser/` | PHP | the agent part: only loaded beside ddd-agents (`getNamespacesRequiringClasses`) |
-| `src/Symfony/Commands/Browser/` | PHP | `app:browser:check-renderer`, `app:browser:purge-sessions` |
-| `config/app/Browser/`, `config/app/AI/Skills/Browser/` | PHP | config defaults, agent skills |
+| `src/Domain/AI/{Entities,Repo,Services}/Browser/` | PHP | sessions (entities, DB repos), page screenshots, renderer contract and Argus repos, services, file sink port |
+| `src/Domain/AI/Entities/Browser/Agents/`, `src/Domain/AI/Services/Browser/Agents/`, `src/Presentation/Mcp/Client/Browser/` | PHP | the agent part: only loaded beside ddd-agents (`getNamespacesRequiringClasses`) |
+| `src/Symfony/Commands/Browser/` | PHP | `app:agent-browser:check-renderer`, `app:agent-browser:purge-sessions` (aliases `app:browser:*`) |
+| `config/app/AI/Browser/`, `config/app/AI/Skills/Agent/Web/` | PHP | config defaults (`AI.Browser.*`), agent skills `Agent.Web.Browser`, `.BrowserDesign`, `.Pages` |
 | `renderer/` | renderer | the Node service (Patchright, Chrome); its own README and tests. PHP changes never touch it |
 
 Both sides push to `main`: `git fetch && git rebase origin/main` before every push; commit only your own paths.

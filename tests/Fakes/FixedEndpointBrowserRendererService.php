@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DDD\Tests\Browser\Fakes;
 
-use DDD\Domain\Browser\Repo\Argus\Sessions\ArgusBrowserSessionAnswer;
-use DDD\Domain\Browser\Services\BrowserRendererService;
+use DDD\Domain\AI\Repo\Argus\Browser\Sessions\ArgusBrowserSessionAnswer;
+use DDD\Domain\AI\Services\Browser\BrowserRendererService;
 use LogicException;
 
 /** A renderer service with a fixed sessions endpoint that must never reach the wire */

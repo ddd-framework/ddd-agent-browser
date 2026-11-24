@@ -1,53 +1,74 @@
-# mgamadeus/ddd-browser
+# mgamadeus/ddd-agent-browser
 
 Browser sessions and website analysis for [mgamadeus/ddd](https://github.com/ddd-framework/ddd): an agent drives a real
-browser (navigate, accessibility snapshot with refs, click, type, select, keys, scroll, screenshots, tabs) and reads a
-page's design (design tokens, computed styles with their CSS rules, assets). Page audits (SEO, performance, tech) and
+browser (navigate, accessibility snapshot with refs, click, type, select, keys, scroll, screenshots, tabs), reads a
+page's design (design tokens, computed styles with their CSS rules, assets) and sees single pages as screenshots
+(page tools on the renderer's stateless route). Formerly `mgamadeus/ddd-browser` (renamed in 0.2.0; migration in
+CHANGELOG.md). Page audits (SEO, performance, tech) and
 site crawls follow in later releases.
 
 One repository, two artefacts released by one tag `vX.Y.Z`:
 
 | Artefact | Source |
 |---|---|
-| Composer `mgamadeus/ddd-browser` | `src/`, `config/`, `tests/` |
-| Image `ghcr.io/ddd-framework/ddd-browser-renderer:X.Y.Z` (private) | `renderer/`: real Chrome stable driven by Patchright, Xvfb |
+| Composer `mgamadeus/ddd-agent-browser` | `src/`, `config/`, `tests/` |
+| Image `ghcr.io/ddd-framework/ddd-agent-browser-renderer:X.Y.Z` (private) | `renderer/`: real Chrome stable driven by Patchright, Xvfb |
 
 The renderer is a separate service: it has internet, but no data and no secrets except its caller tokens. The
 application never renders or executes foreign content itself.
 
 ## Install
 
-1. `composer require mgamadeus/ddd-browser` (with `mgamadeus/ddd-agents` ≥ 0.1.37 for the agent tools).
+1. `composer require mgamadeus/ddd-agent-browser` (with `mgamadeus/ddd-agents` ≥ 0.1.37 for the agent tools).
 2. Run the renderer (one deployment in role `stateless`, one in role `session` — or one in role `all`) and configure
-   `config/app/Browser/renderer.php` (or the env variables it names): `BROWSER_RENDERER_ENDPOINT`,
-   `BROWSER_RENDERER_SESSION_ENDPOINT`, `BROWSER_RENDERER_TOKEN` (the token of this application's caller class).
-3. `php bin/console app:browser:check-renderer` in the deploy: exit 1 when a deployment is unreachable, not ready,
+   `config/app/AI/Browser/renderer.php` (`AI.Browser.renderer`; or the env variables it names):
+   `AGENT_BROWSER_RENDERER_ENDPOINT`, `AGENT_BROWSER_RENDERER_SESSION_ENDPOINT`, `AGENT_BROWSER_RENDERER_TOKEN` (the
+   token of this application's caller class). A host that keeps other env names overrides the `*Env` keys in its own
+   copy of the file.
+3. `php bin/console app:agent-browser:check-renderer` in the deploy: exit 1 when a deployment is unreachable, not ready,
    speaks an incompatible contract, or the sessions deployment serves no session routes.
 4. Tables (through the schema diff): `BrowserSessions`, `BrowserSessionEvents`.
-5. Switch sessions on: `Browser.sessions.enabled` (`config/app/Browser/sessions.php`). Interactive browsing is for
+5. Switch sessions on: `AI.Browser.sessions.enabled` (`config/app/AI/Browser/sessions.php`). Interactive browsing is for
    staff only: by default an admin account (`BrowserAccessService::isInteractiveBrowsingAllowed()`, override in a
    same-path subclass).
 6. A file sink for exported assets and design token files: a service implementing
-   `DDD\Domain\Browser\Services\BrowserFileSink` (autoconfigured, tag `browser.file_sink`). It is the host's upload
+   `DDD\Domain\AI\Services\Browser\BrowserFileSink` (autoconfigured, tag `browser.file_sink`). It is the host's upload
    intake: type from the bytes, executable content refused, malware scan; the file lands in the workspace as
    untrusted with its origin. Without it `browserExportAssets` refuses and design tokens are not saved as a file.
    Target convention: everything taken from one site goes to the folder `web/<domain>` (`BrowserFileToStore::$targetFolder`)
    under the renderer's file names (`design-tokens.json`, `logo.svg`, `logo-on-dark.svg`, `logo.png`, `logo-original.<ext>`,
    `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg`, `font-<name>`), side by side: the token
    file names the logo files.
-7. With ddd-agents: bind the skills in the host's `config/app/AI/skillPackages.php`:
-   `'Browser.Session' => ['browser.session']`, `'Browser.Design' => ['browser.design']`, and gate them for staff.
-8. A daily cron for `app:browser:purge-sessions` (`Browser.sessions.retentionDays`, default 90).
+7. With ddd-agents: bind the skills by class in the host's `config/app/AI/skillPackages.php`:
+   `'Agent.Web.Browser' => [BrowserSessionMCPPackage::class]`, `'Agent.Web.BrowserDesign' =>
+   [BrowserDesignMCPPackage::class]` (a sub-skill of `Agent.Web.Browser`), gated for staff, and
+   `'Agent.Web.Pages' => [BrowserPagesMCPPackage::class]` (a sub-skill: add `Agent.Web.Pages` to the
+   `subSkillNames` of the host's web search skill, and drop ddd-agents' `Web.PageView` from it; see "Tool names").
+8. A daily cron for `app:agent-browser:purge-sessions` (`AI.Browser.sessions.retentionDays`, default 90).
 
 ## Agent tools
 
 | Package (skill) | Tools |
 |---|---|
-| `browser.session` (`Browser.Session`) | `browserNavigate`, `browserSnapshot`, `browserClick`, `browserType`, `browserSelectOption`, `browserPressKey`, `browserScroll`, `browserScreenshot`, `browserTabs`, `browserClose` |
-| `browser.design` (`Browser.Design`) | `browserExtractDesign`, `browserInspect`, `browserExportAssets` |
+| `agent.web.pages` (`Agent.Web.Pages`) | `getWebPageAsScreenshot` |
+| `agent.web.browser` (`Agent.Web.Browser`) | `browserNavigate`, `browserSnapshot`, `browserClick`, `browserType`, `browserSelectOption`, `browserPressKey`, `browserScroll`, `browserScreenshot`, `browserTabs`, `browserClose` |
+| `agent.web.browserDesign` (`Agent.Web.BrowserDesign`) | `browserExtractDesign`, `browserInspect`, `browserExportAssets` |
 
 Every tool returns untrusted content (page strings inside untrusted marks) and is a READ for the platform
-(`browserExportAssets` writes the workspace). Rules:
+(`browserExportAssets` writes the workspace).
+
+**Page tools** (`Agent.Web.Pages`): `getWebPageAsScreenshot` renders one public page on the stateless route and shows one
+part of it (4,000 px as two pictures; the answer names the page height and the other parts; `device` desktop|mobile;
+`noCache`). It needs no session, no consent and no staff account, and works with sessions switched off; it is
+available while a stateless endpoint is configured. A page that blocks scrolling is rendered again in an 8,000 px
+window. Captures are cached in memory for ten minutes per URL and viewport.
+
+**Tool names** are global: `getWebPageAsScreenshot` has the name of ddd-agents' tool (package `agent.webPageScreenshot`,
+skill `Web.PageView`) it replaces, which ddd-agents removes in 0.3.0. Until then both packages exist side by side; a
+host binds only one of them (two loaded packages with one tool name answer "AMBIGUOUS"). There is no Composer
+`conflict` for it: with ddd-agents 0.1.x the module is used together with it.
+
+Session rules:
 
 - **A URL the model writes** runs only when it stands in an operator message, is the bare start page of a host an
   operator message names, or appeared in full in a tool result; following a link by ref always runs. Anything else
@@ -64,14 +85,22 @@ Every tool returns untrusted content (page strings inside untrusted marks) and i
 
 ## Renderer contract
 
+- **Stateless route:** `POST /webPageRenderer/screenshot` under `X-Render-Token` (roles `stateless` and `all`), camelCase
+  body `{url, device, viewportWidth, viewportHeight, fullPage, maxPageHeight?, format, quality?, density, waitUntil,
+  minWaitSeconds, domTimeoutSeconds, javascriptEnabled, redirectEnabled, maxRedirectHops?, omitBackground,
+  cookieBanners?, waitForSelector?}` → `{status: 200, data: {reason, content (base64), format, finalUrl, title,
+  statusCode, width, height, truncated, engine, consent}}`. PHP: `ArgusBrowserPageScreenshot`; a reason other than `OK`
+  (BLOCKED, UNRESOLVABLE, TIMEOUT, FETCH_FAILED, BOT_CHALLENGE, …) and 429 (`BUSY`) become the tool's failure sentence.
+  PHP waits `AI.Browser.renderer.screenshotTimeoutSeconds` (40).
+
 Contract version = the package version; `BrowserRendererContract::CONTRACT_VERSION` (PHP) and
 `renderer/package.json` "version" (the release workflow writes the tag's version into it before the image build). The
 PHP side needs at least `BrowserRendererContract::MINIMUM_CONTRACT_VERSION` within the same major. Within a major the
 contract only grows: the renderer is deployed first, then the PHP release that reads a new field.
 
 - **Health:** `GET /healthz` (no auth): 200 `{status: "ok", contractVersion, chromeVersion, role}` or 503
-  `{status: "starting", contractVersion, role}`. `contractVersion` is the full release tag (e.g. `0.1.0-rc.3`).
-  `app:browser:check-renderer` compares it by semver compatibility, not by string: same major, core version at least
+  `{status: "starting", contractVersion, role}`. `contractVersion` is the full release tag (e.g. `0.2.0`).
+  `app:agent-browser:check-renderer` compares it by semver compatibility, not by string: same major, core version at least
   `MINIMUM_CONTRACT_VERSION`, a pre-release suffix allowed. The release workflow checks that `CONTRACT_VERSION` is the
   core of the release tag.
 - **Role:** env `RENDER_ROLE=stateless|session|all` (default `stateless`). Session routes exist only in `session` and
@@ -107,7 +136,7 @@ contract only grows: the renderer is deployed first, then the PHP release that r
     `OUT_OF_RANGE`, `NO_PAGE`, `UNSUPPORTED_FRAME`, `BUSY`; each becomes a tool sentence with the next move
     (`BrowserAgentAnswersService::buildRefusalText()`).
   - Deadlines in the renderer: navigate 45 s, analyse 60 s, others 30–40 s. PHP waits up to
-    `Browser.renderer.sessionActionTimeoutSeconds` (65); the tools' execution ceilings are above that (80 s, 140 s for
+    `AI.Browser.renderer.sessionActionTimeoutSeconds` (65); the tools' execution ceilings are above that (80 s, 140 s for
     a tool that may call twice).
   - `screenshot` `{target: viewport|element|fullPage, ref?, fromY?, height?, format?, quality?}` → `{content (base64),
     format, width, height, truncated}`. PHP cuts the parts (4,000 px as two pictures) and decodes the image through
@@ -133,8 +162,10 @@ contract only grows: the renderer is deployed first, then the PHP release that r
 
 | Command | |
 |---|---|
-| `app:browser:check-renderer [--format=json]` | the deploy check of both deployments (exit 1 on a problem) |
-| `app:browser:purge-sessions [--dryRun]` | deletes sessions and their log after the retention time (500 per run) |
+| `app:agent-browser:check-renderer [--format=json]` | the deploy check of both deployments (exit 1 on a problem) |
+| `app:agent-browser:purge-sessions [--dryRun]` | deletes sessions and their log after the retention time (500 per run) |
+
+The former names `app:browser:check-renderer` and `app:browser:purge-sessions` stay as aliases.
 
 ## License
 
