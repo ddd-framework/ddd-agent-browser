@@ -96,7 +96,8 @@ class BrowserSessionRequest extends ValueObject
             'mode' => $this->mode,
             'ref' => $this->ref,
             'find' => $this->find,
-            'cursor' => $this->cursor,
+            // the renderer takes the cursor as a whole number; the model and an answer hand it on as a string
+            'cursor' => $this->cursor !== null && ctype_digit(trim($this->cursor)) ? (int)trim($this->cursor) : null,
             'maxChars' => $this->maxChars,
             'text' => $this->text,
             'submit' => $this->submit,

@@ -11,6 +11,7 @@ the module.
 |---|---|---|
 | `src/Domain/AI/{Entities,Repo,Services}/Browser/` | PHP | sessions (entities, DB repos), page screenshots, renderer contract and Argus repos, services, file sink port |
 | `src/Domain/AI/Entities/Browser/Agents/`, `src/Domain/AI/Services/Browser/Agents/`, `src/Presentation/Mcp/Client/Browser/` | PHP | the agent part: only loaded beside ddd-agents (`getNamespacesRequiringClasses`) |
+| `src/Domain/AI/Services/Browser/PageText/` | PHP | the page reader of the web research: only loaded beside ddd-agents ≥ 0.3.1 (its `WebPageTextSource` port) |
 | `src/Symfony/Commands/Browser/` | PHP | `app:agent-browser:check-renderer`, `app:agent-browser:purge-sessions` (aliases `app:browser:*`) |
 | `config/app/AI/Browser/`, `config/app/AI/Skills/Agent/Web/` | PHP | config defaults (`AI.Browser.*`), agent skills `Agent.Web.Browser`, `.BrowserDesign`, `.Pages` |
 | `renderer/` | renderer | the Node service (Patchright, Chrome); its own README and tests. PHP changes never touch it |

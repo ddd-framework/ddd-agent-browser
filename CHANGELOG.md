@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.0
+
+- **Page reader of the web research** (`DDD\Domain\AI\Services\Browser\PageText\BrowserWebPageTextSourceService`):
+  the `WebPageTextSource` of ddd-agents 0.3.1, registered by the port's tag and loaded only when the port exists
+  (`getNamespacesRequiringClasses`). Switched on by `AI.Browser.pageText.enabled` (new file
+  `config/app/AI/Browser/pageText.php`, default **false**: nothing changes until a host turns it on). Then the
+  agent's `getWebPageAsMarkdown` reads pages over HTTP first (`GuardedHttpFetchService`, HTML parsed by `SafeXml`)
+  and, with `render` `auto`, again in the browser renderer's session deployment when the text is thin (fewer than
+  `thinPageMinCharacters`), a bot challenge or no page; `always` reads in the browser first, `never` only over HTTP.
+  Each page names its reader in `WebPageMarkdown::$fetchedVia` (`http` / `browser`); successful reads are cached for
+  `cacheTtlSeconds`.
+- `BrowserHtmlMarkdownService` (HTML of a page as markdown for a model: main region, headings, lists, absolute links,
+  tables, code; no scripts, navigation, footers, forms, pictures) and the value object `BrowserPageText`.
+- Fix: a snapshot cursor reaches the renderer as a whole number (`BrowserSessionRequest::toRendererBody()`); the
+  model and the answers hand it on as a string, which the renderer refused with a 400 ("cursor must be a whole
+  number"), so `browserSnapshot` could not page further.
+- No renderer change: the browser read uses the existing session routes (`navigate`, `snapshot` mode `text`,
+  `close`). `CONTRACT_VERSION` 0.3.0 follows the package version; a 0.2.x renderer stays compatible.
+- Development dependency and suggestion: ddd-agents ^0.3.1. With an older ddd-agents the page reader is not loaded;
+  everything else works as in 0.2.2.
+- What a host does: nothing to stay as before. To use the reader: copy `pageText.php` into
+  `config/app/AI/Browser/` with `enabled` true (the session endpoint of the renderer is needed for the browser
+  read; without it, pages are read over HTTP only).
+
 ## 0.2.2
 
 - **Rights declared by the package** (`DDD\Domain\AI\Entities\Browser\BrowserAccountRights`): the session and design

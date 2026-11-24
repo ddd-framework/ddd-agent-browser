@@ -2,8 +2,9 @@
 
 Browser sessions and website analysis for [mgamadeus/ddd](https://github.com/ddd-framework/ddd): an agent drives a real
 browser (navigate, accessibility snapshot with refs, click, type, select, keys, scroll, screenshots, tabs), reads a
-page's design (design tokens, computed styles with their CSS rules, assets) and sees single pages as screenshots
-(page tools on the renderer's stateless route). Formerly `mgamadeus/ddd-browser` (renamed in 0.2.0; migration in
+page's design (design tokens, computed styles with their CSS rules, assets), sees single pages as screenshots
+(page tools on the renderer's stateless route) and reads pages as text for the agent's web research (over HTTP first,
+in the browser when the text is thin). Formerly `mgamadeus/ddd-browser` (renamed in 0.2.0; migration in
 CHANGELOG.md). Page audits (SEO, performance, tech) and
 site crawls follow in later releases.
 
@@ -50,6 +51,34 @@ application never renders or executes foreign content itself.
    may talk to the agent; a host with its own rights model answers both names. The staff rule of
    `BrowserAccessService` still applies to sessions.
 9. A daily cron for `app:agent-browser:purge-sessions` (`AI.Browser.sessions.retentionDays`, default 90).
+10. Optional, with ddd-agents ≥ 0.3.1: the page reader of the web research (see "Page text"), switched on by
+    `AI.Browser.pageText.enabled`.
+
+## Page text
+
+`BrowserWebPageTextSourceService` is the `WebPageTextSource` of ddd-agents ≥ 0.3.1 (registered by its tag; the class
+loads only when the port exists). While `AI.Browser.pageText.enabled` is true (`config/app/AI/Browser/pageText.php`,
+default false), the agent's `getWebPageAsMarkdown` reads every page through it instead of the url-to-markdown endpoint;
+ddd-agents keeps its own refusals first (search result pages, unresolvable or private hosts) and falls back to the
+endpoint when the source throws.
+
+| `render` | Behaviour |
+|---|---|
+| `auto` (default) | HTTP first; a page with fewer than `thinPageMinCharacters` (600) text characters, a bot challenge or no page at all is read again in the browser; the longer text wins |
+| `always` | the browser first; HTTP when the renderer cannot run (no session endpoint, busy, a renderer fault) |
+| `never` | HTTP only |
+
+- **HTTP:** `GuardedHttpFetchService` (public addresses only, every redirect hop guarded, `httpMaxBytes`,
+  `httpTimeoutSeconds`, HTML / XHTML / plain text only), the HTML parsed by `SafeXml::loadHtml()` and turned into
+  markdown by `BrowserHtmlMarkdownService` (main region, headings, lists, links made absolute, tables, code; no
+  scripts, navigation, footers, forms or pictures).
+- **Browser:** the session deployment of the renderer, no contract change: `navigate` without a session key opens a
+  session, `snapshot` in mode `text` reads the main region (`browserCharactersPerPage`, at most `browserMaxPages`
+  pages), `close` ends it. No session row is written and no consent is asked: the read sends nothing but the URL the
+  web research was given.
+- Each page names its reader in `WebPageMarkdown::$fetchedVia` (`http` or `browser`). Successful reads are cached
+  for `cacheTtlSeconds` (3600; `noCache` reads again). The rights of the tool stay with ddd-agents
+  (`getWebPageAsMarkdown`, `useWeb`).
 
 ## Agent tools
 
