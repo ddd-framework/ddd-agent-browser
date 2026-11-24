@@ -7,7 +7,9 @@ namespace DDD\Presentation\Mcp\Client\Browser;
 use DDD\Domain\AI\Entities\Browser\Agents\BrowserPageScreenshotPart;
 use DDD\Domain\AI\Entities\Conversations\Agent\AgentToolCallProvenance;
 use DDD\Domain\AI\Entities\Conversations\Messages\ContextRetentionSettings;
+use DDD\Domain\AI\Entities\Browser\BrowserAccountRights;
 use DDD\Domain\AI\Entities\MCPPackages\MCPPackage;
+use DDD\Domain\AI\Entities\MCPPackages\MCPRequiresAccountRights;
 use DDD\Domain\AI\Entities\MCPPackages\MCPTool;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolEffect;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolExecutionTimeout;
@@ -34,6 +36,7 @@ use DDD\Presentation\Mcp\Dtos\MCPToolResponse;
  * The tool keeps the name of the ddd-agents tool it replaces (tool names are global): a host binds either this package
  * or ddd-agents' `agent.webPageScreenshot`, never both in one conversation.
  */
+#[MCPRequiresAccountRights(BrowserAccountRights::USE_WEB)]
 class BrowserPagesMCPPackage extends MCPPackage
 {
     public static ?string $name = 'agent.web.pages';

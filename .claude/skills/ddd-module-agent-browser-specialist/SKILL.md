@@ -1,9 +1,9 @@
 ---
 name: ddd-module-agent-browser-specialist
-description: "Builds, wires and changes mgamadeus/ddd-agent-browser (formerly ddd-browser): browser sessions on the renderer (navigate, snapshot refs, click, type, select, keys, scroll, screenshot, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets) and the page tool getWebPageAsScreenshot (stateless route). Covers the renderer contract (healthz version and role, routes, X-Render-Token, 429, CONSENT_REQUIRED release tokens), app:agent-browser:check-renderer / purge-sessions, sessions and log, origin rules with owner consent, the staff gate, the BrowserFileSink port, config AI.Browser.*, env AGENT_BROWSER_RENDERER_*, skills Agent.Web.Browser / BrowserDesign / Pages and their ids, releasing package and image. Use when installing the module, migrating from ddd-browser, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED, 404 role), the contract changes, a host implements the file sink, or design tokens are needed."
+description: "Builds, wires and changes mgamadeus/ddd-agent-browser (formerly ddd-browser): browser sessions on the renderer (navigate, snapshot refs, click, type, select, keys, scroll, screenshot, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets) and the page tool getWebPageAsScreenshot (stateless route). Covers the renderer contract (healthz version and role, routes, X-Render-Token, 429, CONSENT_REQUIRED release tokens), app:agent-browser:check-renderer / purge-sessions, sessions and log, origin rules with owner consent, the staff gate, the rights useBrowser / useWeb (BrowserAccountRights), the BrowserFileSink port, config AI.Browser.*, env AGENT_BROWSER_RENDERER_*, skills Agent.Web.Browser / BrowserDesign / Pages and their ids, releasing package and image. Use when installing the module, migrating from ddd-browser, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED, 404 role), the contract changes, a host implements the file sink, or design tokens are needed."
 metadata:
   author: mgamadeus
-  version: "0.2.0"
+  version: "0.2.2"
   framework: mgamadeus/ddd
 ---
 
@@ -65,7 +65,9 @@ renderer's names (design-tokens.json next to logo.svg / logo.png). PHP waits 65 
 ## Host checklist
 
 Endpoints + token env (`AI.Browser.renderer`), `app:agent-browser:check-renderer` in the deploy, the two tables, `AI.Browser.sessions.enabled`,
-the staff rule (`BrowserAccessService::isInteractiveBrowsingAllowed()` same-path override), a `BrowserFileSink`,
+the staff rule (`BrowserAccessService::isInteractiveBrowsingAllowed()` same-path override), the rights
+(`BrowserAccountRights::USE_BROWSER` on the session and design packages and skills, `USE_WEB` on the page tool; mapped
+by the host or ddd-agents' `AI.accountRights`), a `BrowserFileSink`,
 skill binding by class `Agent.Web.Browser` → `BrowserSessionMCPPackage`, `Agent.Web.BrowserDesign` → `BrowserDesignMCPPackage`,
 `Agent.Web.Pages` → `BrowserPagesMCPPackage` (listed in the web search skill's `subSkillNames` instead of `Web.PageView`),
 cron `app:agent-browser:purge-sessions`. Migration from ddd-browser 0.1.x: CHANGELOG 0.2.0.

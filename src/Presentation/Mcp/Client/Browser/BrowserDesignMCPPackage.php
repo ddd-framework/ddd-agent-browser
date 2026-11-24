@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace DDD\Presentation\Mcp\Client\Browser;
 
 use DDD\Domain\AI\Entities\Conversations\Agent\AgentToolCallProvenance;
+use DDD\Domain\AI\Entities\Browser\BrowserAccountRights;
 use DDD\Domain\AI\Entities\MCPPackages\MCPPackage;
+use DDD\Domain\AI\Entities\MCPPackages\MCPRequiresAccountRights;
 use DDD\Domain\AI\Entities\MCPPackages\MCPTool;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolEffect;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolExecutionTimeout;
@@ -33,6 +35,7 @@ use DDD\Presentation\Mcp\Client\Browser\Dtos\BrowserMcpResponseDto;
  * the page (stylesheets, logo, screenshots, fonts) through the host's file sink. Analyses are fixed scripts of the
  * renderer, addressed by name; the model never sends code.
  */
+#[MCPRequiresAccountRights(BrowserAccountRights::USE_BROWSER)]
 class BrowserDesignMCPPackage extends MCPPackage
 {
     public static ?string $name = 'agent.web.browserDesign';

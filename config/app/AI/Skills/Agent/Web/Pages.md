@@ -1,4 +1,5 @@
 ---
+requiredAccountRights: ['useWeb']
 shortDescription: "render a web page to a screenshot and judge how it looks"
 description: >-
   See how a web page actually looks: render a concrete URL to a screenshot and judge layout, colours, fonts and

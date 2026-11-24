@@ -1,4 +1,5 @@
 ---
+requiredAccountRights: ['useBrowser']
 decisionCriteria: "The task needs the look of a website: its colours, fonts, logo, button or card styles, or a document in a site's style."
 shortDescription: "reads a website's design: colours, fonts, logo, styles; saves tokens and assets"
 description: >-

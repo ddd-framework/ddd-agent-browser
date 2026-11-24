@@ -1,4 +1,5 @@
 ---
+requiredAccountRights: ['useBrowser']
 decisionCriteria: "The task needs a real browser on a website: several steps on a site, a click, a field, a menu, a cookie banner, a look at the page as it is now."
 shortDescription: "drives a real browser: open pages, read them by snapshot, click, type, screenshots, tabs"
 description: >-

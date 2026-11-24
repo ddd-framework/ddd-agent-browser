@@ -4,7 +4,7 @@
     "type": "library",
     "license": "MIT",
     "homepage": "https://github.com/ddd-framework/ddd-agent-browser",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "support": {
         "issues": "https://github.com/ddd-framework/ddd-agent-browser/issues",
         "source": "https://github.com/ddd-framework/ddd-agent-browser"
@@ -33,10 +33,10 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",
-        "mgamadeus/ddd-agents": "^0.1.37"
+        "mgamadeus/ddd-agents": "^0.3.0"
     },
     "suggest": {
-        "mgamadeus/ddd-agents": "^0.1.37 — adds the browser session, design and page tools and skills for agents (owner consent for submissions and unknown URLs)",
+        "mgamadeus/ddd-agents": "^0.3.0 (works with ^0.1.37) — adds the browser session, design and page tools and skills for agents (owner consent for submissions and unknown URLs, rights useBrowser / useWeb)",
         "mgamadeus/ddd-site-insights": "Shows the on-site findings of a page next to its Search Console data"
     },
     "autoload": {

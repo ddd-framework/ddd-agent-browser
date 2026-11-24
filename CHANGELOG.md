@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.2
+
+- **Rights declared by the package** (`DDD\Domain\AI\Entities\Browser\BrowserAccountRights`): the session and design
+  packages require `useBrowser`, the page screenshot `useWeb` (`#[MCPRequiresAccountRights]`), and the skills
+  `Agent.Web.Browser`, `Agent.Web.BrowserDesign` and `Agent.Web.Pages` name the same right in `requiredAccountRights`.
+  With ddd-agents 0.3 the default mapping (`AI.accountRights`) gives `useBrowser` to the superadmins and `useWeb` to
+  every account that may talk to the agent. With ddd-agents below 0.3 the default entitlement service answers no
+  rights and every gate passes, as before.
+- What a host does: map both names when it has its own rights model; drop the same-path subclasses of the three
+  packages that only added a right of the host's own.
+- `BrowserRendererContract::CONTRACT_VERSION` 0.2.2 (no change of the HTTP contract; a 0.2.x renderer stays compatible).
+
 ## 0.2.1
 
 - A host file sink that throws no longer ends the request in a fatal error: `BrowserFileSinksService::storeFile()`

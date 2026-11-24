@@ -44,7 +44,12 @@ application never renders or executes foreign content itself.
    [BrowserDesignMCPPackage::class]` (a sub-skill of `Agent.Web.Browser`), gated for staff, and
    `'Agent.Web.Pages' => [BrowserPagesMCPPackage::class]` (a sub-skill: add `Agent.Web.Pages` to the
    `subSkillNames` of the host's web search skill, and drop ddd-agents' `Web.PageView` from it; see "Tool names").
-8. A daily cron for `app:agent-browser:purge-sessions` (`AI.Browser.sessions.retentionDays`, default 90).
+8. Rights (`BrowserAccountRights`): the session and design packages require `useBrowser`, the page screenshot
+   `useWeb`, each as `#[MCPRequiresAccountRights]` on the package and `requiredAccountRights` on its skill. ddd-agents
+   0.3's default mapping (`AI.accountRights`) gives `useBrowser` to the superadmins and `useWeb` to every account that
+   may talk to the agent; a host with its own rights model answers both names. The staff rule of
+   `BrowserAccessService` still applies to sessions.
+9. A daily cron for `app:agent-browser:purge-sessions` (`AI.Browser.sessions.retentionDays`, default 90).
 
 ## Agent tools
 

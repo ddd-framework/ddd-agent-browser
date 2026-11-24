@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace DDD\Presentation\Mcp\Client\Browser;
 
 use DDD\Domain\AI\Entities\Conversations\Agent\AgentToolCallProvenance;
+use DDD\Domain\AI\Entities\Browser\BrowserAccountRights;
 use DDD\Domain\AI\Entities\MCPPackages\MCPPackage;
+use DDD\Domain\AI\Entities\MCPPackages\MCPRequiresAccountRights;
 use DDD\Domain\AI\Entities\MCPPackages\MCPTool;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolEffect;
 use DDD\Domain\AI\Entities\MCPPackages\MCPToolExecutionTimeout;
@@ -43,6 +45,7 @@ use DDD\Presentation\Mcp\Dtos\MCPToolResponse;
  * platform and returns untrusted content. A model-written URL or typed text runs only with a known origin (else the
  * operator's consent), and a submission the renderer stopped runs only after the operator's yes, once.
  */
+#[MCPRequiresAccountRights(BrowserAccountRights::USE_BROWSER)]
 class BrowserSessionMCPPackage extends MCPPackage
 {
     public static ?string $name = 'agent.web.browser';
