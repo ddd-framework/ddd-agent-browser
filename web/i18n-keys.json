@@ -1,6 +1,6 @@
 {
   "package": "@mgamadeus/ddd-agent-browser",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "generatedBy": "scripts/build-i18n-manifest.mjs",
   "keys": [
     {

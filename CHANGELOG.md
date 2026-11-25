@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0
+
+- The page screenshot call `ArgusBrowserPageScreenshot` is an override point: `BrowserRendererService` builds it with
+  `newInstance()`, so an application's same-path subclass replaces it for every page tool, and the call is cut into
+  documented hooks, one per concern: `isRenderingAvailable()`, `buildRendererEndpoint()`, `isExternalCall()`,
+  `buildRequestHeaders()`, `buildRendererBody()`, `mapRendererResponse()`, `findFailureReasonOfAnswer()`. A host can
+  take its screenshots from another service (other endpoint, internal Argus auth, other body and answer) without a
+  renderer. README › "Customising the renderer call".
+- New `BrowserRendererService::isPageRenderingAvailable()` (asks the call); `BrowserAgentPagesService::isPageRenderingAvailable()`
+  and the tool's availability use it. `createPageScreenshotCall()` answers null when the call is not available;
+  `prepareCall()` accepts a null base URL (= the configured one).
+- `BrowserPageScreenshot`: reason constants `REASON_*`, optional page facts `finalUrl`, `title`, `pageHttpStatusCode`,
+  `consentPlatform`, `consentAction` (filled from the renderer's answer).
+- The page tools refuse a capture that is not a PNG by its magic bytes (`UNSUPPORTED_TYPE`) before the decoder,
+  whatever call produced it. The capability-off sentence says "no page renderer is configured".
+- Fix: `AI.Browser.renderer.screenshotTimeoutSeconds` now reaches the HTTP client (only the attribute's 40 s did).
+- No renderer change; `CONTRACT_VERSION` 0.5.0 follows the package version.
+- Host steps: none.
+
 ## 0.4.4
 
 - Release of the npm package `@mgamadeus/ddd-agent-browser` at the package version: the 0.4.3 tag published the

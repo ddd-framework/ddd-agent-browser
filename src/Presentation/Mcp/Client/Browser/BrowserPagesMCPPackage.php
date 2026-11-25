@@ -28,8 +28,9 @@ use DDD\Presentation\Mcp\Dtos\MCPToolResponse;
  * on the browser renderer's stateless route and returns the pixels so the model can SEE the page (layout, colours,
  * images, design), not just read its text. Needs a vision-capable model.
  *
- * Available while a stateless renderer endpoint is configured (`AI.Browser.renderer.endpoint` /
- * `AGENT_BROWSER_RENDERER_ENDPOINT`). The capture and the slicing into parts are
+ * Available while page rendering is available (`BrowserRendererService::isPageRenderingAvailable()`: by default a
+ * stateless renderer endpoint is configured, `AI.Browser.renderer.endpoint` / `AGENT_BROWSER_RENDERER_ENDPOINT`; an
+ * application's same-path subclass of `ArgusBrowserPageScreenshot` decides otherwise). The capture and the slicing into parts are
  * {@see BrowserAgentPagesService::capturePagePartForModel()}; this tool turns the part into image content and answers
  * with the coverage line. A URL whose host is not public is not rendered.
  *

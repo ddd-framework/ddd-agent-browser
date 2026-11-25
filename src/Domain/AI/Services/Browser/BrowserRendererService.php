@@ -180,34 +180,48 @@ class BrowserRendererService extends Service
         return PublicUrlGuard::classifyHost($url) === PublicUrlGuard::HOST_PUBLIC;
     }
 
+    /** Whether a stateless renderer deployment is configured (`AI.Browser.renderer.endpoint` / `endpointEnv`) */
     public function isStatelessEndpointConfigured(): bool
     {
         return $this->getBaseUrl() !== null;
     }
 
     /**
-     * A screenshot loader of the stateless route, pointed at the configured deployment with the caller token; null when
-     * no stateless endpoint is configured.
+     * Whether the page tools can render: the page screenshot call says so
+     * ({@see ArgusBrowserPageScreenshot::isRenderingAvailable()}; by default a stateless endpoint is configured, an
+     * application's same-path subclass of the call decides by its own configuration).
+     */
+    public function isPageRenderingAvailable(): bool
+    {
+        return $this->createPageScreenshotLoader()->isRenderingAvailable();
+    }
+
+    /**
+     * The page screenshot call, prepared with the configured stateless deployment, the caller token and the timeout
+     * (`AI.Browser.renderer.screenshotTimeoutSeconds`); null when page rendering is not available.
      * @return ArgusBrowserPageScreenshot|null
      */
     public function createPageScreenshotCall(): ?ArgusBrowserPageScreenshot
     {
-        $baseUrl = $this->getBaseUrl();
-        if ($baseUrl === null) {
+        $argusBrowserPageScreenshot = $this->createPageScreenshotLoader();
+        if (!$argusBrowserPageScreenshot->isRenderingAvailable()) {
             return null;
         }
-        $argusBrowserPageScreenshot = $this->createPageScreenshotLoader();
         $argusBrowserPageScreenshot->prepareCall(
-            $baseUrl,
+            $this->getBaseUrl(),
             $this->getCallerToken(),
             max(5, (int)(Config::get('AI.Browser.renderer.screenshotTimeoutSeconds') ?? static::DEFAULT_SCREENSHOT_TIMEOUT_SECONDS))
         );
         return $argusBrowserPageScreenshot;
     }
 
+    /**
+     * A new page screenshot call: an application's same-path subclass of {@see ArgusBrowserPageScreenshot} when there
+     * is one (`newInstance()`), the package's class otherwise.
+     */
     protected function createPageScreenshotLoader(): ArgusBrowserPageScreenshot
     {
-        return new ArgusBrowserPageScreenshot();
+        return ArgusBrowserPageScreenshot::newInstance();
     }
 
     protected function createSessionAnswerCall(): ArgusBrowserSessionAnswer

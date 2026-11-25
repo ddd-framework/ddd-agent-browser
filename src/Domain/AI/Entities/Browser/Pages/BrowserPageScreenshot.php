@@ -11,22 +11,61 @@ use DDD\Infrastructure\Untrusted\RasterImageDecoder;
 use DDD\Infrastructure\Untrusted\UnsupportedImageFormatException;
 
 /**
- * A rendered-page SCREENSHOT of a URL, captured through the browser renderer's stateless route
- * (`POST /webPageRenderer/screenshot`). Transient: the base64 bytes are never persisted. The capture is
- * {@see ArgusBrowserPageScreenshot}; this object cuts it into the parts a vision model reads.
+ * A rendered-page SCREENSHOT of a URL, captured by {@see ArgusBrowserPageScreenshot} (by default the browser renderer's
+ * stateless route `POST /webPageRenderer/screenshot`; a host individualises the call in a same-path subclass of it, README
+ * › "Customising the renderer call"). Transient: the base64 bytes are never persisted. This object cuts the capture
+ * into the parts a vision model reads.
+ *
+ * Only `content` (base64 PNG) or `failureReason` are required of a capture. The page facts `finalUrl`, `title`,
+ * `pageHttpStatusCode`, `consentPlatform` and `consentAction` may stay null; the page height is always read from the
+ * image.
  */
 #[LazyLoadRepo(LazyLoadRepo::ARGUS, ArgusBrowserPageScreenshot::class)]
 class BrowserPageScreenshot extends ValueObject
 {
+    /** @var string The page loaded too slowly or the call timed out */
+    public const string REASON_TIMEOUT = 'TIMEOUT';
+    /** @var string The page could not be loaded (unreachable, refused, no answer) */
+    public const string REASON_FETCH_FAILED = 'FETCH_FAILED';
+    /** @var string The backend refused the destination */
+    public const string REASON_BLOCKED = 'BLOCKED';
+    /** @var string The site answered with a bot challenge */
+    public const string REASON_BOT_CHALLENGE = 'BOT_CHALLENGE';
+    /** @var string The host has no DNS record */
+    public const string REASON_UNRESOLVABLE = 'UNRESOLVABLE';
+    /** @var string Too many redirects */
+    public const string REASON_TOO_MANY_REDIRECTS = 'TOO_MANY_REDIRECTS';
+    /** @var string The backend is full; retry later */
+    public const string REASON_BUSY = 'BUSY';
+    /** @var string The capture is not a PNG */
+    public const string REASON_UNSUPPORTED_TYPE = 'UNSUPPORTED_TYPE';
+    /** @var string Page rendering is not available (no renderer configured) */
+    public const string REASON_CAPABILITY_OFF = 'CAPABILITY_OFF';
+
     /** @var string|null base64-encoded image content, exactly as the endpoint delivered it. */
     public ?string $content = null;
 
     /**
-     * @var string|null Why nothing was captured, as the endpoint (or the package before the render) names it: one of
-     * the `REASON_*` constants of {@see \DDD\Domain\AI\Entities\Browser\Agents\BrowserPageScreenshotPart} or the endpoint's own code; null on success or when no
-     * reason is known.
+     * @var string|null Why nothing was captured, as the renderer call (or the package before the call) names it: one of
+     * the `REASON_*` constants of this class or of {@see \DDD\Domain\AI\Entities\Browser\Agents\BrowserPageScreenshotPart},
+     * or the backend's own code; null on success.
      */
     public ?string $failureReason = null;
+
+    /** @var string|null The URL the page ended on after redirects; null when not reported */
+    public ?string $finalUrl = null;
+
+    /** @var string|null The page title (third-party text); null when not reported */
+    public ?string $title = null;
+
+    /** @var int|null The HTTP status of the page itself; null when not reported */
+    public ?int $pageHttpStatusCode = null;
+
+    /** @var string|null The consent platform found on the page; null when not reported */
+    public ?string $consentPlatform = null;
+
+    /** @var string|null What the renderer did with a consent banner (OFF, REJECTED, HIDDEN, NONE); null when not reported */
+    public ?string $consentAction = null;
 
     /** The raw decoded image bytes, or null when nothing was captured (empty / invalid base64). */
     public function getImageBlob(): ?string

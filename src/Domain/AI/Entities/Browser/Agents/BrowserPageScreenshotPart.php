@@ -142,7 +142,7 @@ class BrowserPageScreenshotPart extends ValueObject
             self::REASON_FETCH_FAILED => "The page {$urlLabel} could not be loaded by the renderer (unreachable or refused). "
                 . 'Do not retry it now; getWebPageAsMarkdown may still read its text.' . $noGuessing,
             self::REASON_NOT_PUBLIC => "{$urlLabel} is not a public web address, so it is not rendered. Do not retry it." . $noGuessing,
-            self::REASON_CAPABILITY_OFF => 'Screenshots are switched off in this application (no browser renderer is configured). Do not retry; use getWebPageAsMarkdown for the text.',
+            self::REASON_CAPABILITY_OFF => 'Screenshots are switched off in this application (no page renderer is configured). Do not retry; use getWebPageAsMarkdown for the text.',
             default => "Could not capture a screenshot of {$urlLabel}"
                 . (($this->failureReason ?? '') !== '' ? ' (' . $this->failureReason . ')' : '')
                 . ' — the page may be unreachable, not public, blocked, or not an HTML page. Say that you could not load it '

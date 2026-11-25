@@ -12,10 +12,12 @@ use DDD\Domain\AI\Services\Browser\BrowserRendererService;
 use DDD\Infrastructure\Http\PublicUrlGuard;
 use DDD\Infrastructure\Services\DDDService;
 use DDD\Infrastructure\Services\Service;
+use DDD\Infrastructure\Untrusted\RasterImageDecoder;
 use Throwable;
 
 /**
- * The page tools of the skill `Agent.Web.Pages` on the renderer's stateless route: a page rendered full height and cut
+ * The page tools of the skill `Agent.Web.Pages` on the page screenshot call ({@see ArgusBrowserPageScreenshot}; by
+ * default the renderer's stateless route, an application's same-path subclass otherwise): a page rendered full height and cut
  * into the parts a vision model reads ({@see capturePagePartForModel()}). A URL whose host is not public is never sent;
  * the renderer checks every request and redirect hop again.
  */
@@ -24,10 +26,13 @@ class BrowserAgentPagesService extends Service
     /** @var string[] Host class per host, kept for the process (a resolver failure is not kept) */
     protected static array $hostClassByHost = [];
 
-    /** Whether the page tools can render: a stateless renderer endpoint is configured. */
+    /**
+     * Whether the page tools can render: {@see BrowserRendererService::isPageRenderingAvailable()} (by default a
+     * stateless renderer endpoint is configured; a same-path subclass of the screenshot call decides otherwise).
+     */
     public function isPageRenderingAvailable(): bool
     {
-        return $this->getBrowserRendererService()->isStatelessEndpointConfigured();
+        return $this->getBrowserRendererService()->isPageRenderingAvailable();
     }
 
     /**
@@ -56,10 +61,29 @@ class BrowserAgentPagesService extends Service
             $pageScreenshot->failureReason = ArgusBrowserPageScreenshot::findFailureReasonOfTransportError($throwable);
             return $pageScreenshot;
         }
-        $pageScreenshot->content = $argusBrowserPageScreenshot->content;
-        $pageScreenshot->failureReason = ($argusBrowserPageScreenshot->content ?? '') === ''
+        $pageScreenshot->content = ($argusBrowserPageScreenshot->content ?? '') !== '' ? $argusBrowserPageScreenshot->content : null;
+        $pageScreenshot->failureReason = $pageScreenshot->content === null
             ? ($argusBrowserPageScreenshot->failureReason ?? BrowserPageScreenshotPart::REASON_FETCH_FAILED)
             : null;
+        $pageScreenshot->finalUrl = $argusBrowserPageScreenshot->finalUrl;
+        $pageScreenshot->title = $argusBrowserPageScreenshot->title;
+        $pageScreenshot->pageHttpStatusCode = $argusBrowserPageScreenshot->pageHttpStatusCode;
+        $pageScreenshot->consentPlatform = $argusBrowserPageScreenshot->consentPlatform;
+        $pageScreenshot->consentAction = $argusBrowserPageScreenshot->consentAction;
+        return $this->refuseCaptureThatIsNotPng($pageScreenshot);
+    }
+
+    /**
+     * The capture as the page tools may use it: an image that is not a PNG by its magic bytes (whatever call produced
+     * it) is refused as {@see BrowserPageScreenshot::REASON_UNSUPPORTED_TYPE} before a decoder sees it.
+     */
+    protected function refuseCaptureThatIsNotPng(BrowserPageScreenshot $pageScreenshot): BrowserPageScreenshot
+    {
+        $imageBlob = $pageScreenshot->getImageBlob();
+        if ($pageScreenshot->content !== null && ($imageBlob === null || RasterImageDecoder::detectFormat($imageBlob) !== RasterImageDecoder::FORMAT_PNG)) {
+            $pageScreenshot->content = null;
+            $pageScreenshot->failureReason = BrowserPageScreenshot::REASON_UNSUPPORTED_TYPE;
+        }
         return $pageScreenshot;
     }
 

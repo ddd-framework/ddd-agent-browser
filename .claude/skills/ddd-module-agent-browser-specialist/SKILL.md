@@ -1,9 +1,9 @@
 ---
 name: ddd-module-agent-browser-specialist
-description: "Builds, wires and changes mgamadeus/ddd-agent-browser: browser sessions (navigate, snapshot refs, click, type, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets), page tool getWebPageAsScreenshot and the web research page reader (WebPageTextSource, AI.Browser.pageText: HTTP first, browser for thin pages). Covers the renderer contract (healthz, routes, tokens), check-renderer / purge-sessions, sessions and log, admin endpoints BrowserSessionsControllerTrait (sessions, log, close, renderer check) + npm screens, origin rules with owner consent, the staff gate, rights useBrowser / useWeb, the BrowserFileSink port, config AI.Browser.*, skills Agent.Web.Browser / BrowserDesign / Pages, releasing package, npm and image. Use when installing the module, mounting the browser admin screen, reading pages for getWebPageAsMarkdown, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED), the contract changes, a host implements the file sink or needs design tokens."
+description: "Builds, wires, changes mgamadeus/ddd-agent-browser: sessions (navigate, snapshot refs, click, type, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets), page tool getWebPageAsScreenshot (its call ArgusBrowserPageScreenshot is a same-path override point with hooks), web research page reader (WebPageTextSource, AI.Browser.pageText). Covers the renderer contract, check-renderer / purge-sessions, sessions and log, admin BrowserSessionsControllerTrait + npm screens, origin rules with owner consent, staff gate, rights useBrowser / useWeb, BrowserFileSink, config AI.Browser.*, skills Agent.Web.Browser / BrowserDesign / Pages, releases. Use when installing the module, taking page screenshots from another service, mounting the browser admin screen, reading pages for getWebPageAsMarkdown, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED), the contract changes, or a host implements the file sink."
 metadata:
   author: mgamadeus
-  version: "0.4.0"
+  version: "0.5.0"
   framework: mgamadeus/ddd
 ---
 
@@ -23,6 +23,7 @@ it). Classes and tables keep the `Browser` prefix.
 | Sessions and log | `BrowserSession`, `BrowserSessionEvent` (tables `BrowserSessions`, `BrowserSessionEvents`), `Services\BrowserSessionsService` |
 | Rules | `Services\BrowserOriginRulesService` (URL / text origin), `Services\BrowserAccessService` (staff gate, limits) |
 | Files | `Services\BrowserFileSink` (host port, tag `browser.file_sink`), `Services\BrowserFileSinksService` |
+| Page screenshot call | `Repo\Argus\Pages\ArgusBrowserPageScreenshot`, built by `BrowserRendererService::createPageScreenshotLoader()` with `newInstance()` (an application's same-path subclass replaces it); hooks `isRenderingAvailable()`, `buildRendererEndpoint()`, `isExternalCall()`, `buildRequestHeaders()`, `buildRendererBody()`, `mapRendererResponse()`, `findFailureReasonOfAnswer()` (README › "Customising the renderer call"); availability `BrowserRendererService::isPageRenderingAvailable()` |
 | Agent side | `Services\Agents\BrowserAgentSessionsService` (consent, submission release, log), `BrowserAgentAnswersService` (texts, refusals, screenshot parts), `BrowserAgentPagesService` (page tools: capture, parts, tall-window retry, host refusal) with `Entities\Browser\Pages\BrowserPageScreenshot` and `Entities\Browser\Agents\BrowserPageScreenshotPart` |
 | Tools | `Presentation\Mcp\Client\Browser\BrowserSessionMCPPackage` (`agent.web.browser`), `BrowserDesignMCPPackage` (`agent.web.browserDesign`), `BrowserPagesMCPPackage` (`agent.web.pages`, tool `getWebPageAsScreenshot` — same global name as ddd-agents' `agent.webPageScreenshot`: a host binds one) |
 | Skills | `config/app/AI/Skills/Agent/Web/Browser.md` (names the sub-skill `BrowserDesign.md`), `Pages.md` (sub-skill a host adds to its web search skill) |
@@ -44,9 +45,12 @@ it). Classes and tables keep the `Browser` prefix.
    reserved → `OwnerConsentMissingException` naming target and values; reserved → repeat once with `releaseToken`,
    then `markConsentUsed()`.
 5. Every page string in an answer is wrapped (`ToolResultUntrustedSegments`); answers stay ≤ `maxAnswerCharacters`.
-6. Screenshots: only PNG/JPEG via `RasterImageDecoder`, cut by `PhotoUtils::sliceImageVertically()` into 2,000 px
+6. The screenshot call only calls and maps; host refusal, PNG check, parts, tall-window retry, picture budget, tool
+   and skill stay in `BrowserAgentPagesService` for every subclass. One mechanism: the same-path subclass, no config
+   switch, no port.
+7. Screenshots: only PNG/JPEG via `RasterImageDecoder`, cut by `PhotoUtils::sliceImageVertically()` into 2,000 px
    pictures (a part is 4,000 px).
-7. Asset bytes: type via `BrowserFileSinksService::detectContentType()` (never the claimed type), name via
+8. Asset bytes: type via `BrowserFileSinksService::detectContentType()` (never the claimed type), name via
    `sanitizeFileName()`, stored only through the host's sink.
 
 ## Refusals the model reads

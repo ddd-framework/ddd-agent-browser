@@ -1,6 +1,6 @@
 {
   "name": "ddd-agent-browser-renderer",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "Browser renderer of mgamadeus/ddd-agent-browser: screenshots of public web pages and agent-driven browser sessions with design analysis. Real Google Chrome headed in Xvfb via Patchright, consent banners rejected, every request address-guarded.",

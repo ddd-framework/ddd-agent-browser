@@ -132,7 +132,8 @@ Every tool returns untrusted content (page strings inside untrusted marks) and i
 **Page tools** (`Agent.Web.Pages`): `getWebPageAsScreenshot` renders one public page on the stateless route and shows one
 part of it (4,000 px as two pictures; the answer names the page height and the other parts; `device` desktop|mobile;
 `noCache`). It needs no session, no consent and no staff account, and works with sessions switched off; it is
-available while a stateless endpoint is configured. A page that blocks scrolling is rendered again in an 8,000 px
+available while a stateless endpoint is configured (or while an application's subclass of the call says so, see
+"Customising the renderer call"). A page that blocks scrolling is rendered again in an 8,000 px
 window. Captures are cached in memory for ten minutes per URL and viewport.
 
 **Tool names** are global: `getWebPageAsScreenshot` has the name of ddd-agents' tool (package `agent.webPageScreenshot`,
@@ -154,6 +155,78 @@ Session rules:
   every request and redirect hop again.
 - Sessions and their log (navigations with redirects, typed texts, consent questions and releases, refusals, stored
   files) are kept in `BrowserSessions` / `BrowserSessionEvents` for the admin.
+
+## Customising the renderer call
+
+The page tools' screenshot call is `DDD\Domain\AI\Repo\Argus\Browser\Pages\ArgusBrowserPageScreenshot`.
+`BrowserRendererService` builds it with `newInstance()`, so an application's same-path subclass
+(`App\Domain\AI\Repo\Argus\Browser\Pages\ArgusBrowserPageScreenshot extends` the package's class) replaces it
+for every page tool — e.g. to take the screenshots from another screenshot service. No configuration switch: the
+subclass is the override. Override only the hooks that differ:
+
+| Hook | Default | Concern |
+|---|---|---|
+| `isRenderingAvailable(): bool` (public) | an endpoint can be built | whether the page tools are offered and render (`BrowserRendererService::isPageRenderingAvailable()`, `BrowserAgentPagesService::isPageRenderingAvailable()`); answer from the application's own configuration |
+| `buildRendererEndpoint(): ?string` | `POST:` + `AI.Browser.renderer.endpoint` + `/webPageRenderer/screenshot` | method-prefixed endpoint; a relative path (`POST:/service/v1.0/screenshot`) goes through the Argus gateway, an absolute URL is called directly; null = not available |
+| `isExternalCall(): bool` | true | true = external call (no application auth or tracking headers); false = internal call with the application's own Argus auth |
+| `buildRequestHeaders(): array` | JSON + `X-Render-Token` | headers, e.g. the auth of the other service |
+| `buildRendererBody(): array` (public) | the camelCase body of the stateless route | request body from `$url`, `$viewportWidth`, `$viewportHeight`, `$isMobile`, `$fullPage` |
+| `mapRendererResponse(mixed $callResponseData, ?ArgusApiOperation $apiOperation): void` | `{status: 200, data: {reason: "OK", content, finalUrl, title, statusCode, consent}}` | sets `$content` (base64 PNG) or `$failureReason`; optionally the page facts. `$callResponseData` is null when the call got no answer (`$apiOperation->rejectionReason` says why) |
+| `findFailureReasonOfAnswer()` (static) | `data.reason` / `reason`, 429 → BUSY, else TIMEOUT / FETCH_FAILED | the reason of an answer without an image |
+
+Example: another service with a snake_case API that answers `{status: "success", content: "<base64>"}`:
+
+```php
+namespace App\Domain\AI\Repo\Argus\Browser\Pages;
+
+use DDD\Domain\AI\Repo\Argus\Browser\Pages\ArgusBrowserPageScreenshot as PackageArgusBrowserPageScreenshot;
+use DDD\Domain\Base\Repo\Argus\Utils\ArgusApiOperation;
+use DDD\Infrastructure\Libs\Config;
+
+class ArgusBrowserPageScreenshot extends PackageArgusBrowserPageScreenshot
+{
+    protected function buildRendererEndpoint(): ?string
+    {
+        $endpointPath = Config::get('Screenshots.endpointPath');   // the application's own configuration
+        return is_string($endpointPath) && $endpointPath !== '' ? 'POST:' . $endpointPath : null;
+    }
+
+    protected function isExternalCall(): bool { return false; }
+
+    protected function buildRequestHeaders(): array { return []; }
+
+    public function buildRendererBody(): array
+    {
+        return ['url' => (string)$this->url, 'response_type' => 'base64', 'viewport_width' => $this->viewportWidth,
+            'viewport_height' => $this->viewportHeight, 'is_mobile' => $this->isMobile, 'full_page' => $this->fullPage];
+    }
+
+    protected function mapRendererResponse(mixed $callResponseData, ?ArgusApiOperation $apiOperation): void
+    {
+        if (($callResponseData->status ?? null) === 'success' && is_string($callResponseData->content ?? null)) {
+            $this->content = $callResponseData->content;
+            return;
+        }
+        $this->failureReason = static::findFailureReasonOfAnswer($callResponseData, $apiOperation);
+    }
+}
+```
+
+What a subclass may return and leave empty:
+
+- **Failure reasons** on `$failureReason` (constants `REASON_*` of `BrowserPageScreenshot`): `TIMEOUT`, `FETCH_FAILED`,
+  `BLOCKED`, `BOT_CHALLENGE`, `UNRESOLVABLE`, `TOO_MANY_REDIRECTS`, `BUSY`, `UNSUPPORTED_TYPE`, `CAPABILITY_OFF` (each
+  has its own tool sentence or the shared one), or the service's own upper-case code, which the tool names in its
+  generic sentence. Without content and without a reason the capture is `FETCH_FAILED`. A failure is never cached.
+- **Optional page facts** a subclass may leave null: `finalUrl`, `title`, `pageHttpStatusCode`, `consentPlatform`,
+  `consentAction`. The page height is always read from the image.
+- **Stays with the package** whatever the subclass does: the refusal of a URL that is not public (before the call),
+  the PNG check (an image that is not a PNG by its magic bytes is `UNSUPPORTED_TYPE` before Core's
+  `RasterImageDecoder` sees it), the cut into parts, the tall-window retry, the picture budget and
+  describe-before-next-part, the tool and its skill, the memory cache per URL and viewport (`uniqueKey()`).
+
+`app:agent-browser:check-renderer` checks the renderer deployments only; an application that takes its screenshots
+from another service and runs no renderer does not need it.
 
 ## Renderer contract
 
