@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.3
+
+- The content of 0.5.2 (session table conditions for ddd-agents' installation check), released again with the
+  web package's i18n manifest regenerated: the 0.5.2 release stopped before the npm package and the renderer image.
+
 ## 0.5.2
 
 - With ddd-agents 0.5.0 or later, `app:agent:check-installation` requires the tables `BrowserSessions` and

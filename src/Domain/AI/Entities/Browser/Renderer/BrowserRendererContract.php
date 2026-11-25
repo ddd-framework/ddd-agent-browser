@@ -14,7 +14,7 @@ namespace DDD\Domain\AI\Entities\Browser\Renderer;
 class BrowserRendererContract
 {
     /** @var string The contract this package release speaks (= the package version without a prerelease suffix) */
-    public const string CONTRACT_VERSION = '0.5.2';
+    public const string CONTRACT_VERSION = '0.5.3';
 
     /** @var string The lowest renderer contract this package works with */
     public const string MINIMUM_CONTRACT_VERSION = '0.1.0';

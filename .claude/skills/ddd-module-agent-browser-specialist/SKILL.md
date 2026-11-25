@@ -3,7 +3,7 @@ name: ddd-module-agent-browser-specialist
 description: "Builds, wires, changes mgamadeus/ddd-agent-browser: sessions (navigate, snapshot refs, click, type, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets), page tool getWebPageAsScreenshot (its call ArgusBrowserPageScreenshot is a same-path override point with hooks), web research page reader (WebPageTextSource, AI.Browser.pageText). Covers the renderer contract, check-renderer / purge-sessions, sessions and log, admin BrowserSessionsControllerTrait + npm screens, origin rules with owner consent, staff gate, rights useBrowser / useWeb, BrowserFileSink, config AI.Browser.*, skills Agent.Web.Browser / BrowserDesign / Pages, releases. Use when installing the module, taking page screenshots from another service, mounting the browser admin screen, reading pages for getWebPageAsMarkdown, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED), the contract changes, or a host implements the file sink."
 metadata:
   author: mgamadeus
-  version: "0.5.2"
+  version: "0.5.3"
   framework: mgamadeus/ddd
 ---
 
