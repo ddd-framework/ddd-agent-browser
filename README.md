@@ -166,26 +166,45 @@ subclass is the override. Override only the hooks that differ:
 
 | Hook | Default | Concern |
 |---|---|---|
-| `isRenderingAvailable(): bool` (public) | an endpoint can be built | whether the page tools are offered and render (`BrowserRendererService::isPageRenderingAvailable()`, `BrowserAgentPagesService::isPageRenderingAvailable()`); answer from the application's own configuration |
-| `buildRendererEndpoint(): ?string` | `POST:` + `AI.Browser.renderer.endpoint` + `/webPageRenderer/screenshot` | method-prefixed endpoint; a relative path (`POST:/service/v1.0/screenshot`) goes through the Argus gateway, an absolute URL is called directly; null = not available |
+| `isRenderingAvailable(): bool` (public) | an endpoint can be built from the configured stateless deployment | whether the page tools are offered and render (`BrowserRendererService::isPageRenderingAvailable()`, `createPageScreenshotCall()`, `BrowserAgentPagesService::isPageRenderingAvailable()`); answer from the application's own configuration |
+| `buildLoadEndpoint(?string $baseUrl): ?string` | `POST:` + base URL (`AI.Browser.renderer.endpoint`) + `/webPageRenderer/screenshot` | method-prefixed endpoint; a relative path (`POST:/service/v1.0/screenshot`) goes through the application's Argus routing, an absolute URL is called directly; null = not available |
 | `isExternalCall(): bool` | true | true = external call (no application auth or tracking headers); false = internal call with the application's own Argus auth |
 | `buildRequestHeaders(): array` | JSON + `X-Render-Token` | headers, e.g. the auth of the other service |
-| `buildRendererBody(): array` (public) | the camelCase body of the stateless route | request body from `$url`, `$viewportWidth`, `$viewportHeight`, `$isMobile`, `$fullPage` |
-| `mapRendererResponse(mixed $callResponseData, ?ArgusApiOperation $apiOperation): void` | `{status: 200, data: {reason: "OK", content, finalUrl, title, statusCode, consent}}` | sets `$content` (base64 PNG) or `$failureReason`; optionally the page facts. `$callResponseData` is null when the call got no answer (`$apiOperation->rejectionReason` says why) |
+| `buildRequestBody(): array` | `buildRendererBody()` (the camelCase body of the stateless route) | request body from `$url`, `$viewportWidth`, `$viewportHeight`, `$isMobile`, `$fullPage`, `$domTimeoutSeconds`, `$minWaitSeconds` |
+| `findContentOfAnswer(mixed $callResponseData, ?ArgusApiOperation $apiOperation): ?string` | HTTP 200, `data.reason` OK, non-empty `data.content` | the base64 PNG of an answer; null = no image. `$callResponseData` is null when the call got no answer (`$apiOperation->rejectionReason` says why) |
 | `findFailureReasonOfAnswer()` (static) | `data.reason` / `reason`, 429 → BUSY, else TIMEOUT / FETCH_FAILED | the reason of an answer without an image |
+| `findFailureReasonOfTransportError()` (static) | TIMEOUT when the message says so, else FETCH_FAILED | the reason of a call that threw before any answer |
+| `mapRendererResponse()` | content from `findContentOfAnswer()` + the renderer's page facts, else the reason | the whole mapping, only when the hooks above do not fit |
 
-Example: another service with a snake_case API that answers `{status: "success", content: "<base64>"}`:
+The static reason hooks are called on the loader's class (`static::` / `$loader::`), so a subclass's override is
+reached. `handleLoadResponse()` keeps the package rule: content or a failure reason (FETCH_FAILED when none is named),
+a failure is never cached.
+
+**`#[ArgusLoad]` is not inherited** (PHP attributes are not). A subclass need not repeat it: `prepareCall()` gives a
+subclass without its own attribute the package's cache (memory, ten minutes per URL and viewport — every part of a
+page reuses one capture), the endpoint comes from `buildLoadEndpoint()`, the timeout from
+`AI.Browser.renderer.screenshotTimeoutSeconds`. A subclass that declares `#[ArgusLoad]` keeps its own cache level and
+lifetime.
+
+Example: another screenshot service on the application's Argus routing with a snake_case API that answers
+`{status: "success", content: "<base64>"}` (the suite's contract test runs such a class through the page tools):
 
 ```php
 namespace App\Domain\AI\Repo\Argus\Browser\Pages;
 
+use DDD\Domain\AI\Entities\Browser\Pages\BrowserPageScreenshot;
 use DDD\Domain\AI\Repo\Argus\Browser\Pages\ArgusBrowserPageScreenshot as PackageArgusBrowserPageScreenshot;
 use DDD\Domain\Base\Repo\Argus\Utils\ArgusApiOperation;
 use DDD\Infrastructure\Libs\Config;
 
 class ArgusBrowserPageScreenshot extends PackageArgusBrowserPageScreenshot
 {
-    protected function buildRendererEndpoint(): ?string
+    public function isRenderingAvailable(): bool
+    {
+        return $this->buildLoadEndpoint(null) !== null;
+    }
+
+    protected function buildLoadEndpoint(?string $baseUrl): ?string
     {
         $endpointPath = Config::get('Screenshots.endpointPath');   // the application's own configuration
         return is_string($endpointPath) && $endpointPath !== '' ? 'POST:' . $endpointPath : null;
@@ -195,29 +214,38 @@ class ArgusBrowserPageScreenshot extends PackageArgusBrowserPageScreenshot
 
     protected function buildRequestHeaders(): array { return []; }
 
-    public function buildRendererBody(): array
+    protected function buildRequestBody(): array
     {
-        return ['url' => (string)$this->url, 'response_type' => 'base64', 'viewport_width' => $this->viewportWidth,
-            'viewport_height' => $this->viewportHeight, 'is_mobile' => $this->isMobile, 'full_page' => $this->fullPage];
+        return ['url' => (string)$this->url, 'responseType' => 'base64', 'viewport_width' => $this->viewportWidth,
+            'viewport_height' => $this->viewportHeight, 'width' => $this->viewportWidth, 'height' => $this->viewportHeight,
+            'density' => 1, 'type' => 'png', 'javascript_enabled' => true, 'redirect_enabled' => true,
+            'dom_timeout' => $this->domTimeoutSeconds, 'min_wait' => $this->minWaitSeconds, 'is_mobile' => $this->isMobile,
+            'force_full_page' => $this->fullPage, 'emulate_full_page' => true, 'wait_until' => 'networkidle0',
+            'omit_background' => false];
     }
 
-    protected function mapRendererResponse(mixed $callResponseData, ?ArgusApiOperation $apiOperation): void
+    protected function findContentOfAnswer(mixed $callResponseData, ?ArgusApiOperation $apiOperation): ?string
     {
-        if (($callResponseData->status ?? null) === 'success' && is_string($callResponseData->content ?? null)) {
-            $this->content = $callResponseData->content;
-            return;
-        }
-        $this->failureReason = static::findFailureReasonOfAnswer($callResponseData, $apiOperation);
+        return ($callResponseData->status ?? null) === 'success' && is_string($callResponseData->content ?? null)
+            ? $callResponseData->content : null;
+    }
+
+    public static function findFailureReasonOfAnswer(mixed $callResponseData, ?ArgusApiOperation $apiOperation = null): string
+    {
+        return ($callResponseData->error ?? null) === 'bot_challenge'
+            ? BrowserPageScreenshot::REASON_BOT_CHALLENGE
+            : parent::findFailureReasonOfAnswer($callResponseData, $apiOperation);
     }
 }
 ```
 
 What a subclass may return and leave empty:
 
-- **Failure reasons** on `$failureReason` (constants `REASON_*` of `BrowserPageScreenshot`): `TIMEOUT`, `FETCH_FAILED`,
-  `BLOCKED`, `BOT_CHALLENGE`, `UNRESOLVABLE`, `TOO_MANY_REDIRECTS`, `BUSY`, `UNSUPPORTED_TYPE`, `CAPABILITY_OFF` (each
-  has its own tool sentence or the shared one), or the service's own upper-case code, which the tool names in its
-  generic sentence. Without content and without a reason the capture is `FETCH_FAILED`. A failure is never cached.
+- **Failure reasons** on `$failureReason`: map onto the package's vocabulary only — the `REASON_*` constants of
+  `BrowserPageScreenshot` / `BrowserRendererContract`: `TIMEOUT`, `FETCH_FAILED`, `BLOCKED`, `BOT_CHALLENGE`,
+  `UNRESOLVABLE`, `TOO_MANY_REDIRECTS`, `BUSY`, `UNSUPPORTED_TYPE`, `CAPABILITY_OFF` (each has its tool sentence). A
+  subclass adds no reasons. Without content and without a reason the capture is `FETCH_FAILED`. A failure is never
+  cached.
 - **Optional page facts** a subclass may leave null: `finalUrl`, `title`, `pageHttpStatusCode`, `consentPlatform`,
   `consentAction`. The page height is always read from the image.
 - **Stays with the package** whatever the subclass does: the refusal of a URL that is not public (before the call),
@@ -225,8 +253,12 @@ What a subclass may return and leave empty:
   `RasterImageDecoder` sees it), the cut into parts, the tall-window retry, the picture budget and
   describe-before-next-part, the tool and its skill, the memory cache per URL and viewport (`uniqueKey()`).
 
-`app:agent-browser:check-renderer` checks the renderer deployments only; an application that takes its screenshots
-from another service and runs no renderer does not need it.
+**Health.** With an application's call class, `BrowserRendererService::checkDeployments()` (and so
+`app:agent-browser:check-renderer` and the admin `GET /renderer`) lists one more row, `pageScreenshots`: the call's
+endpoint and the note "application call class …, not probed" — no request is sent, and it is no fault (a fault only
+when the class says it is not available). Without a renderer the check passes on that row; configured renderer
+deployments are still probed (sessions use them). A host that wants a real probe overrides
+`BrowserRendererService::checkPageScreenshotCall()` in its same-path subclass of the service.
 
 ## Renderer contract
 

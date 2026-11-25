@@ -17,7 +17,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * The deploy check of the browser renderer: each configured deployment answers `/healthz` with a contract version this
- * package works with, and the sessions deployment runs in role `session` or `all`. Exit 1 on any problem.
+ * package works with, and the sessions deployment runs in role `session` or `all`. An application's own page screenshot
+ * call is listed as row `pageScreenshots` (not probed; a problem only when it says it is not available). Exit 1 on any
+ * problem.
  */
 #[AsCommand(
     name: 'app:agent-browser:check-renderer',
@@ -61,7 +63,7 @@ class BrowserCheckRenderer extends Command
                 $deploymentCheck->health?->role ?? '—',
                 $deploymentCheck->health?->contractVersion ?? '—',
                 $deploymentCheck->health?->chromeVersion ?? '—',
-                $deploymentCheck->problems === [] ? 'OK' : implode('; ', $deploymentCheck->problems),
+                ($deploymentCheck->problems === [] ? 'OK' : implode('; ', $deploymentCheck->problems)) . ($deploymentCheck->note !== null ? ' (' . $deploymentCheck->note . ')' : ''),
             ];
         }
         $symfonyStyle->table(['Deployment', 'Base URL', 'Status', 'Role', 'Contract', 'Chrome', 'Check'], $tableRows);
@@ -85,6 +87,7 @@ class BrowserCheckRenderer extends Command
             'chromeVersion' => $browserRendererDeploymentCheck->health?->chromeVersion,
             'httpStatusCode' => $browserRendererDeploymentCheck->health?->httpStatusCode,
             'problems' => $browserRendererDeploymentCheck->problems,
+            'note' => $browserRendererDeploymentCheck->note,
         ];
     }
 }

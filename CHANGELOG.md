@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.5.1
+
+- Screenshot call hooks named as the binding method list: `buildLoadEndpoint(?string $baseUrl)` (replaces 0.5.0's
+  `buildRendererEndpoint()`), `buildRequestBody()` (the body sent; default `buildRendererBody()`, which stays),
+  `findContentOfAnswer()` (the base64 PNG of an answer; `mapRendererResponse()` stays as the whole-mapping hook on top
+  of it). 0.5.0 was out for minutes; a subclass written against `buildRendererEndpoint()` renames it.
+- Fix: the failure-reason hooks are reached — `BrowserAgentPagesService::capturePageScreenshot()` calls
+  `findFailureReasonOfTransportError()` on the loader's class instead of the package class.
+- Fix: a subclass without its own `#[ArgusLoad]` (attributes are not inherited) gets the package's cache (memory, ten
+  minutes per URL and viewport) in `prepareCall()`; in 0.5.0 it ran uncached and every part rendered the page again.
+- Health: with an application's call class, `checkDeployments()` lists the row `pageScreenshots` (endpoint, note
+  "application call class …, not probed", no request); no fault unless the class says it is not available, so
+  `app:agent-browser:check-renderer` and the admin `GET /renderer` pass without a renderer. Hook
+  `BrowserRendererService::checkPageScreenshotCall()`; `BrowserRendererDeploymentCheck::$note`, also in the command's
+  JSON and table.
+- README › "Customising the renderer call": hook table, `#[ArgusLoad]` inheritance, reasons (package vocabulary only),
+  health; contract test with a snake_case API on a relative endpoint, internal call, `{status, content}` answer, end to
+  end through the page tools.
+- No renderer change; `CONTRACT_VERSION` 0.5.1.
+- Host steps: none.
+
 ## 0.5.0
 
 - The page screenshot call `ArgusBrowserPageScreenshot` is an override point: `BrowserRendererService` builds it with

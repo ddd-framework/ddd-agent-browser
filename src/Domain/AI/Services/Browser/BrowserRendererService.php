@@ -109,15 +109,23 @@ class BrowserRendererService extends Service
         return $argusBrowserRendererHealth;
     }
 
+    /** @var string The check row of an application's own page screenshot call */
+    public const string DEPLOYMENT_PAGE_SCREENSHOTS = 'pageScreenshots';
+
     /**
      * Checks every configured deployment against this package: `/healthz` answers ready, the contract version fits,
      * and the deployment of the session routes serves sessions (role `session` or `all`). One deployment configured for
-     * both is checked once, as `stateless+sessions`. Empty when no renderer is configured.
+     * both is checked once, as `stateless+sessions`. With an application's own page screenshot call one more row
+     * names it ({@see checkPageScreenshotCall()}). Empty when nothing is configured.
      * @return BrowserRendererDeploymentChecks
      */
     public function checkDeployments(): BrowserRendererDeploymentChecks
     {
         $browserRendererDeploymentChecks = new BrowserRendererDeploymentChecks();
+        $pageScreenshotCallCheck = $this->checkPageScreenshotCall();
+        if ($pageScreenshotCallCheck !== null) {
+            $browserRendererDeploymentChecks->add($pageScreenshotCallCheck);
+        }
         $baseUrl = $this->getBaseUrl();
         $sessionBaseUrl = $this->getSessionBaseUrl();
         if ($baseUrl !== null && $sessionBaseUrl === $baseUrl) {
@@ -134,6 +142,30 @@ class BrowserRendererService extends Service
             $browserRendererDeploymentChecks->add($browserRendererDeploymentCheck);
         }
         return $browserRendererDeploymentChecks;
+    }
+
+    /**
+     * The check row of the page screenshot call when it is an application's own class (a same-path subclass of
+     * {@see ArgusBrowserPageScreenshot}): not probed — no request is sent — only whether it says it is available; null
+     * for the package's own call (its deployment is the stateless one). A host overrides this to probe its service.
+     */
+    public function checkPageScreenshotCall(): ?BrowserRendererDeploymentCheck
+    {
+        $argusBrowserPageScreenshot = $this->createPageScreenshotLoader();
+        if ($argusBrowserPageScreenshot::class === ArgusBrowserPageScreenshot::class) {
+            return null;
+        }
+        $browserRendererDeploymentCheck = new BrowserRendererDeploymentCheck();
+        $browserRendererDeploymentCheck->deployment = static::DEPLOYMENT_PAGE_SCREENSHOTS;
+        $browserRendererDeploymentCheck->note = 'application call class ' . $argusBrowserPageScreenshot::class . ', not probed';
+        if ($argusBrowserPageScreenshot->isRenderingAvailable()) {
+            $argusBrowserPageScreenshot->prepareCall($this->getBaseUrl(), null, static::DEFAULT_SCREENSHOT_TIMEOUT_SECONDS);
+            $loadEndpoint = $argusBrowserPageScreenshot->getArgusSettings()->argusLoad->loadEndpoint;
+            $browserRendererDeploymentCheck->baseUrl = is_string($loadEndpoint) ? $loadEndpoint : null;
+        } else {
+            $browserRendererDeploymentCheck->problems = ['the page screenshot call ' . $argusBrowserPageScreenshot::class . ' is not available (its configuration)'];
+        }
+        return $browserRendererDeploymentCheck;
     }
 
     /**

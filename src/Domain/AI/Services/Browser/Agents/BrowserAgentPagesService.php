@@ -58,7 +58,8 @@ class BrowserAgentPagesService extends Service
             throw $agentToolExecutionTimeoutException;
         } catch (Throwable $throwable) {
             // a connection error or the client's own timeout is a failed render with its reason, not an internal error
-            $pageScreenshot->failureReason = ArgusBrowserPageScreenshot::findFailureReasonOfTransportError($throwable);
+            // called on the loader's class: an application's subclass maps its own transport errors
+            $pageScreenshot->failureReason = $argusBrowserPageScreenshot::findFailureReasonOfTransportError($throwable);
             return $pageScreenshot;
         }
         $pageScreenshot->content = ($argusBrowserPageScreenshot->content ?? '') !== '' ? $argusBrowserPageScreenshot->content : null;

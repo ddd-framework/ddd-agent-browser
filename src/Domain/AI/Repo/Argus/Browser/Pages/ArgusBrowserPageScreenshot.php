@@ -28,12 +28,19 @@ use Throwable;
  * | Hook | Concern |
  * |---|---|
  * | {@see isRenderingAvailable()} | whether the page tools are offered and render at all |
- * | {@see buildRendererEndpoint()} | method-prefixed endpoint; a relative path goes through the Argus gateway |
+ * | {@see buildLoadEndpoint()} | method-prefixed endpoint; a relative path goes through the application's Argus routing |
  * | {@see isExternalCall()} | external call (no application auth) or internal call (the application's own Argus auth) |
  * | {@see buildRequestHeaders()} | request headers (auth) |
- * | {@see buildRendererBody()} | request body |
- * | {@see mapRendererResponse()} | the answer → `content` (base64 PNG) or `failureReason` (+ optional page facts) |
- * | {@see findFailureReasonOfAnswer()} | the failure reason of an answer that carries no image |
+ * | {@see buildRequestBody()} | request body (default {@see buildRendererBody()}, the renderer's camelCase body) |
+ * | {@see findContentOfAnswer()} | the base64 PNG of an answer; null = no image |
+ * | {@see findFailureReasonOfAnswer()} | the failure reason of an answer without an image (a `REASON_*` code) |
+ * | {@see mapRendererResponse()} | the whole mapping (content, reason, optional page facts) when the two above do not fit |
+ *
+ * A subclass need not repeat `#[ArgusLoad]`: PHP attributes are not inherited, so {@see prepareCall()} applies the
+ * package's cache (memory, ten minutes per URL and viewport, {@see applyPackageCacheSettingsUnlessDeclared()}) to a
+ * subclass without its own attribute; the endpoint comes from {@see buildLoadEndpoint()} and the timeout from
+ * `AI.Browser.renderer.screenshotTimeoutSeconds`. A subclass that declares `#[ArgusLoad]` keeps its own cache level and
+ * lifetime.
  *
  * Everything above the call stays the package's whatever a subclass does: the refusal of a URL that is not public, the
  * cut into parts, the tall-window retry, the picture budget, the PNG check before the decoder, the tool and its skill.
@@ -79,7 +86,7 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
     protected ?string $callerToken = null;
 
     /**
-     * Points this loader at its endpoint: {@see buildRendererEndpoint()} becomes the load endpoint, `$timeoutSeconds`
+     * Points this loader at its endpoint: {@see buildLoadEndpoint()} becomes the load endpoint, `$timeoutSeconds`
      * the time PHP waits. A refused or timed-out call answers null instead of throwing out of the load.
      * @param string|null $baseUrl absolute base URL of the stateless deployment; null = the configured one
      * @param string|null $callerToken the caller class's token
@@ -91,7 +98,8 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
         $this->baseUrl = $baseUrl;
         $this->callerToken = $callerToken;
         $argusSettings = $this->getArgusSettings();
-        $argusSettings->argusLoad->loadEndpoint = $this->buildRendererEndpoint();
+        $this->applyPackageCacheSettingsUnlessDeclared();
+        $argusSettings->argusLoad->loadEndpoint = $this->buildLoadEndpoint($this->baseUrl);
         $argusSettings->argusLoad->timeout = (float)$timeoutSeconds;
         // the operations read the settings' timeout (copied from the attribute when the settings were built)
         $argusSettings->timeout = (float)$timeoutSeconds;
@@ -99,22 +107,39 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
     }
 
     /**
-     * Hook: whether page rendering is available — the page tools are offered and render only then. Default: an
-     * endpoint can be built ({@see buildRendererEndpoint()}, i.e. a stateless renderer endpoint is configured). A
-     * subclass that calls another service answers from that service's configuration.
+     * The package's cache for a subclass without its own `#[ArgusLoad]` (attributes are not inherited, it would run
+     * uncached and every part of a page would render again): memory, ten minutes. A subclass that declares the
+     * attribute keeps its own settings.
      */
-    public function isRenderingAvailable(): bool
+    protected function applyPackageCacheSettingsUnlessDeclared(): void
     {
-        return $this->buildRendererEndpoint() !== null;
+        if (static::class === self::class || (new \ReflectionClass(static::class))->getAttributes(ArgusLoad::class) !== []) {
+            return;
+        }
+        $argusSettings = $this->getArgusSettings();
+        $argusSettings->argusLoad->cacheLevel = ArgusCache::CACHELEVEL_MEMORY;
+        $argusSettings->argusLoad->cacheTtl = ArgusCache::CACHE_TTL_TEN_MINUTES;
     }
 
     /**
-     * Hook: the method-prefixed load endpoint (`POST:https://…` direct, `POST:/service/v1.0/route` through the Argus
-     * gateway); null when none can be built. Default: the stateless deployment's base URL + the screenshot route.
+     * Hook: whether page rendering is available — the page tools are offered and render only then. Default: an
+     * endpoint can be built from the configured stateless deployment ({@see buildLoadEndpoint()}). A subclass that
+     * calls another service answers from that service's configuration.
      */
-    protected function buildRendererEndpoint(): ?string
+    public function isRenderingAvailable(): bool
     {
-        $baseUrl = $this->baseUrl ?? $this->getBrowserRendererService()->getBaseUrl();
+        return $this->buildLoadEndpoint($this->baseUrl) !== null;
+    }
+
+    /**
+     * Hook: the method-prefixed load endpoint — `POST:https://…` is called directly, a relative `POST:/service/v1.0/route`
+     * goes through the application's Argus routing. `$baseUrl` is the stateless deployment {@see prepareCall()} was
+     * given (null = the configured one). Null when none can be built. Default: the deployment's base URL + the
+     * screenshot route.
+     */
+    protected function buildLoadEndpoint(?string $baseUrl): ?string
+    {
+        $baseUrl ??= $this->getBrowserRendererService()->getBaseUrl();
         if ($baseUrl === null || $baseUrl === '') {
             return null;
         }
@@ -145,9 +170,18 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
     }
 
     /**
-     * Hook: the request body, built from {@see $url}, {@see $viewportWidth}, {@see $viewportHeight}, {@see $isMobile},
-     * {@see $fullPage}. Default: the camelCase body of the renderer's stateless route. The capture must stay opaque
-     * and full page; the image must be a PNG.
+     * Hook: the request body sent, built from {@see $url}, {@see $viewportWidth}, {@see $viewportHeight},
+     * {@see $isMobile}, {@see $fullPage}. Default: {@see buildRendererBody()}. The capture must stay opaque and full page;
+     * the image must be a PNG.
+     * @return array<string, mixed>
+     */
+    protected function buildRequestBody(): array
+    {
+        return $this->buildRendererBody();
+    }
+
+    /**
+     * The camelCase body of the renderer's stateless route.
      * @return array<string, mixed>
      */
     public function buildRendererBody(): array
@@ -171,24 +205,36 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
     }
 
     /**
-     * Hook: reads the answer onto this object — on success {@see BrowserPageScreenshot::$content} (base64 PNG) and,
-     * when the answer has them, the page facts; otherwise {@see BrowserPageScreenshot::$failureReason}
-     * ({@see findFailureReasonOfAnswer()}). `$callResponseData` is the decoded JSON (null when the call got no answer;
-     * then `$apiOperation->rejectionReason` says why). Default: `{status: 200, data: {reason: "OK", content, finalUrl,
-     * title, statusCode, consent}}`.
+     * Hook: the base64 PNG of an answer; null when it carries none. `$callResponseData` is the decoded JSON (null when
+     * the call got no answer; then `$apiOperation->rejectionReason` says why). Default: HTTP 200, `data.reason` OK and a
+     * non-empty `data.content`.
      */
-    protected function mapRendererResponse(mixed $callResponseData, ?ArgusApiOperation $apiOperation): void
+    protected function findContentOfAnswer(mixed $callResponseData, ?ArgusApiOperation $apiOperation): ?string
     {
-        $this->content = null;
-        $this->failureReason = null;
         $data = is_object($callResponseData) && is_object($callResponseData->data ?? null) ? $callResponseData->data : null;
         $httpStatusCode = $apiOperation?->responseStatusCode
             ?? (is_object($callResponseData) && is_numeric($callResponseData->status ?? null) ? (int)$callResponseData->status : null);
         if ($data !== null && ($httpStatusCode === null || $httpStatusCode === 200) && ($data->reason ?? null) === BrowserRendererContract::REASON_OK
             && is_string($data->content ?? null) && $data->content !== ''
         ) {
-            $this->content = $data->content;
-            $this->applyReportedPageFacts($data);
+            return $data->content;
+        }
+        return null;
+    }
+
+    /**
+     * Hook: reads the answer onto this object — {@see BrowserPageScreenshot::$content} from {@see findContentOfAnswer()}
+     * plus the page facts the answer has, else {@see BrowserPageScreenshot::$failureReason} from
+     * {@see findFailureReasonOfAnswer()}. Override it only when content and reason do not cover the answer.
+     */
+    protected function mapRendererResponse(mixed $callResponseData, ?ArgusApiOperation $apiOperation): void
+    {
+        $content = $this->findContentOfAnswer($callResponseData, $apiOperation);
+        if ($content !== null && $content !== '') {
+            $this->content = $content;
+            if (is_object($callResponseData) && is_object($callResponseData->data ?? null)) {
+                $this->applyReportedPageFacts($callResponseData->data);
+            }
             return;
         }
         $this->failureReason = static::findFailureReasonOfAnswer($callResponseData, $apiOperation);
@@ -210,7 +256,9 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
 
     /**
      * Hook: the failure code of an answer without an image: `data.reason` (or `reason`) when it is a code, upper-cased;
-     * HTTP 429 → BUSY; for a call without an answer TIMEOUT when its reason says so, else FETCH_FAILED.
+     * HTTP 429 → BUSY; for a call without an answer TIMEOUT when its reason says so, else FETCH_FAILED. A subclass maps
+     * onto the `REASON_*` codes of {@see BrowserRendererContract} / {@see BrowserPageScreenshot}; the package calls it on
+     * the loader's class, so an override is reached.
      */
     public static function findFailureReasonOfAnswer(mixed $callResponseData, ?ArgusApiOperation $apiOperation = null): string
     {
@@ -238,8 +286,8 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
     }
 
     /**
-     * The failure code of a call that threw before any answer (a connection error, the client's timeout): TIMEOUT when
-     * the message says so, else FETCH_FAILED.
+     * Hook: the failure code of a call that threw before any answer (a connection error, the client's timeout): TIMEOUT
+     * when the message says so, else FETCH_FAILED. Called on the loader's class.
      */
     public static function findFailureReasonOfTransportError(Throwable $throwable): string
     {
@@ -282,7 +330,7 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
     }
 
     /**
-     * The request: {@see buildRendererBody()}, {@see buildRequestHeaders()} and, for {@see isExternalCall()}, the
+     * The request: {@see buildRequestBody()}, {@see buildRequestHeaders()} and, for {@see isExternalCall()}, the
      * external-call flag. Null when no url is set, so the load stops instead of calling with an empty target.
      */
     protected function getLoadPayload(): ?array
@@ -290,7 +338,7 @@ class ArgusBrowserPageScreenshot extends BrowserPageScreenshot
         if ($this->url === null || $this->url === '') {
             return null;
         }
-        $loadPayload = ['body' => $this->buildRendererBody()];
+        $loadPayload = ['body' => $this->buildRequestBody()];
         $requestHeaders = $this->buildRequestHeaders();
         if ($requestHeaders !== []) {
             $loadPayload['headers'] = $requestHeaders;
