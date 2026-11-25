@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.4
+
+- Release of the npm package `@mgamadeus/ddd-agent-browser` at the package version: the 0.4.3 tag published the
+  Composer package and the renderer image, but its npm job stopped on the stale text manifest `web/i18n-keys.json`
+  (it carries the version), so npm has no 0.4.3. Contents as 0.4.3, `CONTRACT_VERSION` 0.4.4.
+- Host steps: none.
+
 ## 0.4.3
 
 - New `DDD\Domain\AI\Entities\Browser\BrowserAISkill` with the names of the package's agent skills, as ddd-agents'
