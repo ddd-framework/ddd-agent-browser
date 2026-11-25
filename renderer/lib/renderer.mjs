@@ -346,7 +346,7 @@ export class PageRenderer {
 
   /**
    * The wait condition after DOMContentLoaded. A page that never becomes idle (ads, trackers) is still captured when
-   * the time is up: the condition only decides how long to wait, as at rc-headless.
+   * the time is up: the condition only decides how long to wait.
    */
   async waitForCondition(page, job, state, remainingMs) {
     if (job.waitUntil === 'domcontentloaded') return;
