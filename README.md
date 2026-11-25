@@ -41,11 +41,16 @@ application never renders or executes foreign content itself.
    under the renderer's file names (`design-tokens.json`, `logo.svg`, `logo-on-dark.svg`, `logo.png`, `logo-original.<ext>`,
    `stylesheet-NN-<name>.css`, `screenshot-viewport.png`, `screenshot-page.jpg`, `font-<name>`), side by side: the token
    file names the logo files.
-7. With ddd-agents: bind the skills by class in the host's `config/app/AI/skillPackages.php`:
-   `'Agent.Web.Browser' => [BrowserSessionMCPPackage::class]`, `'Agent.Web.BrowserDesign' =>
-   [BrowserDesignMCPPackage::class]` (a sub-skill of `Agent.Web.Browser`), gated for staff, and
-   `'Agent.Web.Pages' => [BrowserPagesMCPPackage::class]` (a sub-skill: add `Agent.Web.Pages` to the
-   `subSkillNames` of the host's web search skill, and drop ddd-agents' `Web.PageView` from it; see "Tool names").
+7. With ddd-agents: bind the skills by class in the host's `config/app/AI/skillPackages.php`, named by the constants
+   of `DDD\Domain\AI\Entities\Browser\BrowserAISkill` (the literals work as well):
+   ```php
+   BrowserAISkill::AGENT_WEB_BROWSER => [BrowserSessionMCPPackage::class],
+   BrowserAISkill::AGENT_WEB_BROWSER_DESIGN => [BrowserDesignMCPPackage::class], // a sub-skill of Agent.Web.Browser
+   BrowserAISkill::AGENT_WEB_PAGES => [BrowserPagesMCPPackage::class],
+   ```
+   The session and design skills are gated for staff. `Agent.Web.Pages` (`BrowserAISkill::AGENT_WEB_PAGES`) is a
+   sub-skill: add it to the `subSkillNames` of the host's web search skill, and drop ddd-agents' `Web.PageView` from
+   it; see "Tool names").
 8. Rights (`BrowserAccountRights`): the session and design packages require `useBrowser`, the page screenshot
    `useWeb`, each as `#[MCPRequiresAccountRights]` on the package and `requiredAccountRights` on its skill. ddd-agents
    0.3's default mapping (`AI.accountRights`) gives `useBrowser` to the superadmins and `useWeb` to every account that

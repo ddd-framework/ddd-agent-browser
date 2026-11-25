@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.3
+
+- New `DDD\Domain\AI\Entities\Browser\BrowserAISkill` with the names of the package's agent skills, as ddd-agents'
+  `AISkill::AGENT_*`: `AGENT_WEB_PAGES` (`Agent.Web.Pages`), `AGENT_WEB_BROWSER` (`Agent.Web.Browser`),
+  `AGENT_WEB_BROWSER_DESIGN` (`Agent.Web.BrowserDesign`). A host can name them in `skillPackages.php` and
+  `subSkillNames` instead of the literals. Additive: the literals keep working, skill names unchanged. A test checks
+  that every constant names a shipped skill file. README › "Installation" uses the constants.
+- No renderer change; `CONTRACT_VERSION` 0.4.3 follows the package version.
+- Host steps: none.
+
 ## 0.4.2
 
 - npm `./screen`: the conversation link of `BrowserSessionsScreen` and `BrowserSessionDetailScreen` renders with the

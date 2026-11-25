@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DDD\Tests\Browser\Config;
 
 use DDD\Domain\AI\Entities\Browser\BrowserAccountRights;
+use DDD\Domain\AI\Entities\Browser\BrowserAISkill;
 use DDD\Domain\AI\Entities\MCPPackages\MCPPackage;
 use DDD\Domain\AI\Services\Skills\AISkillFilesLintService;
 use DDD\Domain\AI\Services\Skills\AISkillsService;
@@ -44,17 +45,17 @@ class BrowserAccountRightsTest extends TestCase
     {
         Config::addConfigDirectory(dirname(__DIR__, 2) . '/config/app', true);
         $aISkillsService = new AISkillsService();
-        self::assertSame([BrowserAccountRights::USE_BROWSER], $aISkillsService->getAISkillByName('Agent.Web.Browser')?->requiredAccountRights);
-        self::assertSame([BrowserAccountRights::USE_BROWSER], $aISkillsService->getAISkillByName('Agent.Web.BrowserDesign')?->requiredAccountRights);
-        self::assertSame([BrowserAccountRights::USE_WEB], $aISkillsService->getAISkillByName('Agent.Web.Pages')?->requiredAccountRights);
+        self::assertSame([BrowserAccountRights::USE_BROWSER], $aISkillsService->getAISkillByName(BrowserAISkill::AGENT_WEB_BROWSER)?->requiredAccountRights);
+        self::assertSame([BrowserAccountRights::USE_BROWSER], $aISkillsService->getAISkillByName(BrowserAISkill::AGENT_WEB_BROWSER_DESIGN)?->requiredAccountRights);
+        self::assertSame([BrowserAccountRights::USE_WEB], $aISkillsService->getAISkillByName(BrowserAISkill::AGENT_WEB_PAGES)?->requiredAccountRights);
 
         $configTreeProperty = new ReflectionProperty(Config::class, 'configTree');
         $configTree = $configTreeProperty->isInitialized() ? ($configTreeProperty->getValue() ?? []) : [];
         $this->configTreeBefore = $configTree;
         $configTree['AI']['skillPackages'] = [
-            'Agent.Web.Browser' => [BrowserSessionMCPPackage::class],
-            'Agent.Web.BrowserDesign' => [BrowserDesignMCPPackage::class],
-            'Agent.Web.Pages' => [BrowserPagesMCPPackage::class],
+            BrowserAISkill::AGENT_WEB_BROWSER => [BrowserSessionMCPPackage::class],
+            BrowserAISkill::AGENT_WEB_BROWSER_DESIGN => [BrowserDesignMCPPackage::class],
+            BrowserAISkill::AGENT_WEB_PAGES => [BrowserPagesMCPPackage::class],
         ];
         $configTreeProperty->setValue(null, $configTree);
         $aISkillFilesLintService = new AISkillFilesLintService();

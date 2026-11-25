@@ -71,6 +71,6 @@ Endpoints + token env (`AI.Browser.renderer`), `app:agent-browser:check-renderer
 the staff rule (`BrowserAccessService::isInteractiveBrowsingAllowed()` same-path override), the rights
 (`BrowserAccountRights::USE_BROWSER` on the session and design packages and skills, `USE_WEB` on the page tool; mapped
 by the host or ddd-agents' `AI.accountRights`), a `BrowserFileSink`,
-skill binding by class `Agent.Web.Browser` → `BrowserSessionMCPPackage`, `Agent.Web.BrowserDesign` → `BrowserDesignMCPPackage`,
+skill binding by class (names as constants `Entities\Browser\BrowserAISkill::AGENT_WEB_BROWSER`, `AGENT_WEB_BROWSER_DESIGN`, `AGENT_WEB_PAGES`) `Agent.Web.Browser` → `BrowserSessionMCPPackage`, `Agent.Web.BrowserDesign` → `BrowserDesignMCPPackage`,
 `Agent.Web.Pages` → `BrowserPagesMCPPackage` (listed in the web search skill's `subSkillNames` instead of `Web.PageView`),
 cron `app:agent-browser:purge-sessions`, optionally the admin screen (README › "Admin": a controller using the trait, `access_control` on its path, the npm screens), optionally `AI.Browser.pageText.enabled` (README › "Page text"). Migration from ddd-browser 0.1.x: CHANGELOG 0.2.0.
