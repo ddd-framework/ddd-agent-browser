@@ -20,6 +20,9 @@ class AgentBrowserModule extends DDDModule
     /** @var string The page text port of ddd-agents (>= 0.3.1): the page reader registers only beside it */
     public const string WEB_PAGE_TEXT_SOURCE_CLASS = 'DDD\\Domain\\AI\\Services\\WebSearch\\WebPageTextSource';
 
+    /** @var string The table condition port of ddd-agents (>= 0.5.0): the session tables' condition registers only beside it */
+    public const string FEATURE_TABLE_CONDITION_PROVIDER_CLASS = 'DDD\\Domain\\AI\\Services\\Installation\\AgentFeatureTableConditionProvider';
+
     public static function getSourcePath(): string
     {
         return __DIR__ . '/../..';
@@ -49,6 +52,7 @@ class AgentBrowserModule extends DDDModule
             'DDD\\Domain\\AI\\Services\\Browser\\Agents\\' => self::AGENTS_PACKAGE_CLASS,
             'DDD\\Presentation\\Mcp\\Client\\Browser\\' => self::AGENTS_PACKAGE_CLASS,
             'DDD\\Domain\\AI\\Services\\Browser\\PageText\\' => self::WEB_PAGE_TEXT_SOURCE_CLASS,
+            'DDD\\Domain\\AI\\Services\\Browser\\Installation\\' => self::FEATURE_TABLE_CONDITION_PROVIDER_CLASS,
         ];
     }
 }

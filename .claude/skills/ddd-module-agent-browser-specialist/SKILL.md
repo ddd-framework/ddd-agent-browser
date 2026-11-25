@@ -3,7 +3,7 @@ name: ddd-module-agent-browser-specialist
 description: "Builds, wires, changes mgamadeus/ddd-agent-browser: sessions (navigate, snapshot refs, click, type, tabs), design reading (browserExtractDesign, browserInspect, browserExportAssets), page tool getWebPageAsScreenshot (its call ArgusBrowserPageScreenshot is a same-path override point with hooks), web research page reader (WebPageTextSource, AI.Browser.pageText). Covers the renderer contract, check-renderer / purge-sessions, sessions and log, admin BrowserSessionsControllerTrait + npm screens, origin rules with owner consent, staff gate, rights useBrowser / useWeb, BrowserFileSink, config AI.Browser.*, skills Agent.Web.Browser / BrowserDesign / Pages, releases. Use when installing the module, taking page screenshots from another service, mounting the browser admin screen, reading pages for getWebPageAsMarkdown, a session or page tool refuses (SESSION_GONE, STALE_REF, BUSY, CONSENT_REQUIRED), the contract changes, or a host implements the file sink."
 metadata:
   author: mgamadeus
-  version: "0.5.1"
+  version: "0.5.2"
   framework: mgamadeus/ddd
 ---
 
@@ -20,7 +20,7 @@ it). Classes and tables keep the `Browser` prefix.
 | Contract | `Entities\Renderer\BrowserRendererContract` + README › "Renderer contract" |
 | Renderer calls | `Services\BrowserRendererService` → `Repo\Argus\Sessions\ArgusBrowserSessionAnswer`, `Repo\Argus\Renderer\ArgusBrowserRendererHealth`, `Repo\Argus\Pages\ArgusBrowserPageScreenshot` (stateless route) |
 | Session request / answer | `Entities\Sessions\BrowserSessionRequest`, `BrowserSessionAnswer` (+ `Answers\*`) |
-| Sessions and log | `BrowserSession`, `BrowserSessionEvent` (tables `BrowserSessions`, `BrowserSessionEvents`), `Services\BrowserSessionsService` |
+| Sessions and log | `BrowserSession`, `BrowserSessionEvent` (tables `BrowserSessions`, `BrowserSessionEvents`; required by ddd-agents' installation check only while `AI.Browser.sessions.enabled`: `Services\Installation\BrowserFeatureTableConditionProviderService`), `Services\BrowserSessionsService` |
 | Rules | `Services\BrowserOriginRulesService` (URL / text origin), `Services\BrowserAccessService` (staff gate, limits) |
 | Files | `Services\BrowserFileSink` (host port, tag `browser.file_sink`), `Services\BrowserFileSinksService` |
 | Page screenshot call | `Repo\Argus\Pages\ArgusBrowserPageScreenshot`, built by `BrowserRendererService::createPageScreenshotLoader()` with `newInstance()` (an application's same-path subclass replaces it); hooks `isRenderingAvailable()`, `buildLoadEndpoint()`, `isExternalCall()`, `buildRequestHeaders()`, `buildRequestBody()`, `findContentOfAnswer()`, `findFailureReasonOfAnswer()` / `findFailureReasonOfTransportError()` (static, called on the loader's class), `mapRendererResponse()` (README › "Customising the renderer call"); `#[ArgusLoad]` is not inherited — `prepareCall()` gives a subclass without it the package cache; availability `BrowserRendererService::isPageRenderingAvailable()`; health row `pageScreenshots` (`checkPageScreenshotCall()`, not probed) |

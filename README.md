@@ -56,7 +56,9 @@ application never renders or executes foreign content itself.
    0.3's default mapping (`AI.accountRights`) gives `useBrowser` to the superadmins and `useWeb` to every account that
    may talk to the agent; a host with its own rights model answers both names. The staff rule of
    `BrowserAccessService` still applies to sessions.
-9. A daily cron for `app:agent-browser:purge-sessions` (`AI.Browser.sessions.retentionDays`, default 90).
+9. With sessions on: the tables `BrowserSessions` and `BrowserSessionEvents` and a daily cron for
+   `app:agent-browser:purge-sessions` (`AI.Browser.sessions.retentionDays`, default 90). With sessions off, ddd-agents'
+   (≥ 0.5.0) `app:agent:check-installation` does not require the two tables.
 10. Optional, with ddd-agents ≥ 0.3.1: the page reader of the web research (see "Page text"), switched on by
     `AI.Browser.pageText.enabled`.
 11. Optional: the admin screen (see "Admin").

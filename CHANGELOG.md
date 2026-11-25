@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2
+
+- With ddd-agents 0.5.0 or later, `app:agent:check-installation` requires the tables `BrowserSessions` and
+  `BrowserSessionEvents` only while interactive sessions are switched on (`AI.Browser.sessions.enabled`, default
+  off): `BrowserFeatureTableConditionProviderService` (namespace `Services\Browser\Installation`, registered only
+  beside ddd-agents' `AgentFeatureTableConditionProvider`). Before, a host with sessions off got the two tables as
+  BLOCKING missing tables. Nothing else changes; older ddd-agents versions are unaffected.
+
 ## 0.5.1
 
 - Screenshot call hooks named as the binding method list: `buildLoadEndpoint(?string $baseUrl)` (replaces 0.5.0's
